@@ -26,6 +26,16 @@ jobs:
           chmod 700 get_helm.sh
           ./get_helm.sh
 
+      - name: Build Helm Chart Dependencies
+        run: |
+          for dir in charts/*; do
+            if [ -d "$dir" ] && [ -f "${dir}/Chart.yaml" ]; then
+              helm dependency build "$dir"
+            else
+              echo "$dir is not a Helm chart directory."
+            fi
+          done
+
       - name: Package Helm Charts
         run: |
           mkdir ./package
