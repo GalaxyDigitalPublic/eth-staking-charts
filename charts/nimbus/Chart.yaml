@@ -17,5 +17,5 @@ appVersion: multiarch-v24.2.0
 
 dependencies:
 - name: common
-  repository: https://charts.cryptomanufaktur.io/
+  repository: file://../common
   version: 1.x.x
