@@ -42,21 +42,21 @@ jobs:
           mkdir ./package
           helm package charts/* --destination ./package
 
-      - name: Update Helm repo index
-        run: |
-          cd package
-          helm repo index . --url https://CryptoManufaktur-io.github.io/eth-staking-charts/
-          cd ..
-
       - name: Checkout gh-pages branch
         uses: actions/checkout@v4
         with:
           ref: 'gh-pages'
           path: 'gh-pages'
 
+      - name: Update Helm repo index
+        run: |
+          cd package
+          helm repo index --merge ../gh-pages/index.yaml --url https://CryptoManufaktur-io.github.io/eth-staking-charts/ .
+          cd ..
+
       - name: Commit and push changes
         run: |
-          cp -r package/* gh-pages/
+          cp package/* gh-pages/
           cd gh-pages
           git add .
           git commit -m "Publish Helm charts"
