@@ -1,2 +1,3 @@
 # ignore fetched subcharts
 **/charts/**/charts
+*.swp
