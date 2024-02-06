@@ -1,0 +1,21 @@
+apiVersion: v2
+name: nimbus
+version: 2.2.12
+kubeVersion: "^1.18.0-0"
+description: Nim implementation of the Ethereum Beacon Chain
+type: application
+keywords:
+  - ethereum
+  - blockchain
+  - nimbus
+  - p2p
+home: https://www.ethereum.org/
+sources:
+  - https://github.com/status-im/nimbus-eth2
+icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
+appVersion: multiarch-v24.2.0
+
+dependencies:
+- name: common
+  repository: https://charts.cryptomanufaktur.io/
+  version: 1.x.x

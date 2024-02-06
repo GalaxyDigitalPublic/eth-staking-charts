@@ -1,0 +1,52 @@
+name: Publish Helm Chart
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'charts/**'
+
+jobs:
+  release-charts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Install Helm
+        run: |
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+          chmod 700 get_helm.sh
+          ./get_helm.sh
+
+      - name: Package Helm Charts
+        run: |
+          mkdir ./package
+          helm package charts/* --destination ./package
+
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v2
+        with:
+          ref: 'gh-pages'
+          path: 'gh-pages'
+
+      - name: Update Helm repo index
+        run: |
+          cd gh-pages
+          helm repo index . --url https://CryptoManufaktur-io.github.io/eth-staking-charts/
+          mv -f index.yaml ../package/
+          cd ..
+
+      - name: Commit and push changes
+        run: |
+          cd package
+          git add .
+          git commit -m "Publish Helm charts"
+          git push origin gh-pages
+
