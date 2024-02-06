@@ -18,4 +18,4 @@ appVersion: v1.13.11
 dependencies:
   - name: common
     version: 1.x.x
-    repository: file://../common
+    repository: https://charts.cryptomanufaktur.io/
