@@ -73,7 +73,7 @@ spec:
           command:
             - sh
             - -ac
-            - cp /opt/web3signer/migrations/postgresql/* /migrations/
+            - cp -v /opt/web3signer/migrations/postgresql/* /migrations/
           volumeMounts:
             - name: migrations
               mountPath: /migrations
