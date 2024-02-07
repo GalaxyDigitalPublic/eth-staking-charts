@@ -65,6 +65,18 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+        - name: copy-migrations
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          command:
+            - sh
+            - -ac
+            - cp /opt/web3signer/migrations/postgresql/* /migrations/
+          volumeMounts:
+            - name: migrations
+              mountPath: /migrations
         - name: migrations
           image: "{{ .Values.flywayImage.registry }}/{{ .Values.flywayImage.repository }}:{{ .Values.flywayImage.tag }}"
           imagePullPolicy: {{ .Values.flywayImage.pullPolicy }}
@@ -74,10 +86,11 @@ spec:
             - -user={{ .Values.dbUsername }}
             - -password={{ .Values.dbPassword }}
             - -url={{ .Values.dbUrl }}
+            - -locations=filesystem:/migrations
             - migrate
           volumeMounts:
             - name: migrations
-              mountPath: /flyway/sql
+              mountPath: /migrations
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -130,8 +143,7 @@ spec:
           secret:
             secretName: {{ include "common.names.fullname" . }}-config
         - name: migrations
-          configMap:
-            name: {{ include "common.names.fullname" . }}-migrations
+          emptyDir: {}
         - name: data
           emptyDir:
             medium: Memory
