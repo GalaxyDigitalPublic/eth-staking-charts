@@ -38,9 +38,9 @@ initImageBusybox:
 ## CLI image is used to fetch public keys.
 ##
 cliImage:
-  registry: "europe-west4-docker.pkg.dev"
-  repository: "stakewiselabs/public/cli"
-  tag: "v1.2.7"
+  registry: "ghcr.io"
+  repository: "cryptomanufaktur-io/sync-keys"
+  tag: "v0.0.1"
   pullPolicy: IfNotPresent
 
 ## Database connection string, ex. 'postgresql://username:pass@hostname/dbname'
@@ -96,9 +96,6 @@ validatorsCount: 0
 ##
 suggestedFeeRecipient: ""
 
-## Whether a builder should be used for proposalConfig
-enableBuilder: false
-
 ## Validators image version
 ## ref: https://gcr.io/prysmaticlabs/prysm/validator
 ## ref: https://hub.docker.com/r/sigp/lighthouse
@@ -107,19 +104,15 @@ image:
   prysm:
     registry: "gcr.io"
     repository: "prysmaticlabs/prysm/validator"
-    tag: "v4.2.1"
-  prysmGnosis:
-    registry: "ghcr.io"
-    repository: "gnosischain/gbc-prysm-validator"
-    tag: "v3.2.1-gbc"
+    tag: "v5.0.0"
   lighthouse:
     registry: "docker.io"
     repository: "sigp/lighthouse"
-    tag: "v4.6.0"
+    tag: "v5.0.0"
   teku:
     registry: "docker.io"
     repository: "consensys/teku"
-    tag: "24.1.1"
+    tag: "24.2.0"
 
 ## Credentials to fetch images from private registry
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
@@ -158,7 +151,7 @@ affinity: {}
 priorityClassName: ""
 
 ## Network ID
-## Options for Ethereum: mainnet, prater
+## Options for Ethereum: mainnet, holesky
 ## Options for Gnosis: gnosis
 ##
 network: "mainnet"

@@ -80,23 +80,9 @@ spec:
             - "/data"
             - "--index"
             - "{{ . }}"
-            - "--network"
-            - "{{ $root.Values.network }}"
-          {{- if $root.Values.feeOverride }}
-            - "--solo-fees-file"
-            - "/fee/feeOverride.json"
-          {{- end }}
-          {{- if not $root.Values.enableBuilder }}
-            - "--proposal-builder-enabled"
-            - "false"
-          {{- end }}
           volumeMounts:
             - name: data
               mountPath: /data
-          {{- if $root.Values.feeOverride }}
-            - name: fee-override
-              mountPath: /fee
-          {{- end }}
         - name: prepare
           image: "{{ $root.Values.initImageBusybox.registry }}/{{ $root.Values.initImageBusybox.repository }}:{{ $root.Values.initImageBusybox.tag }}"
           imagePullPolicy: {{ $root.Values.initImageBusybox.pullPolicy }}
@@ -109,18 +95,13 @@ spec:
               ls -lha /data;
               mkdir -p /data/lighthouse/validators;
               cp /data/validator_definitions.yml /data/lighthouse/validators/validator_definitions.yml;
-              cp /mnt/gnosis-prysm/config.yaml /data/config_gnosis_prysm;
               cat /data/signer_keys.yml > /data/config;
               cat /data/config;
               cat /data/proposerConfig.json;
-              cat /data/signer_keys.yml >> /data/config_gnosis_prysm;
-              cat /data/config_gnosis_prysm;
               chown -R {{ $root.Values.securityContext.runAsUser }}:{{ $root.Values.securityContext.runAsUser }} /data;
           volumeMounts:
             - name: data
               mountPath: /data
-            - name: gnosis-prysm
-              mountPath: /mnt/gnosis-prysm
       containers:
         - name: validator
           image: "{{ (pluck $root.Values.type $root.Values.image | first ).registry }}/{{ (pluck $root.Values.type $root.Values.image | first ).repository }}:{{ (pluck $root.Values.type $root.Values.image | first ).tag }}"
@@ -130,15 +111,10 @@ spec:
             - {{ . | quote }}
             {{- end -}}
 
-            {{- if and (eq $root.Values.type "prysm") (ne $root.Values.network "gnosis") }}
+            {{- if eq $root.Values.type "prysm" }}
             - "--{{ $root.Values.network }}"
             - "--config-file=/data/config"
             - "--validators-external-signer-url={{ $.Values.web3signerEndpoint }}"
-            {{- else if and (eq $root.Values.type "prysm") (eq $root.Values.network "gnosis") }}
-            - "--config-file /data/config_gnosis_prysm"
-            - "--chain-config-file /data/config_gnosis_prysm"
-            - "--validators-external-signer-url={{ $.Values.web3signerEndpoint }}"
-            - "--proposer-settings-file=/data/proposerConfig.json"
             {{- else if eq $root.Values.type "lighthouse" }}
             - "--network={{ $root.Values.network }}"
             {{- else if eq $root.Values.type "teku" }}
@@ -205,14 +181,6 @@ spec:
             - name: data
               mountPath: /data
       volumes:
-        - name: gnosis-prysm
-          configMap:
-            name: {{ template "validators.fullname" $root }}-gnosis-prysm
-      {{- if $root.Values.feeOverride }}
-        - name: fee-override
-          configMap:
-            name: {{ template "validators.fullname" $root }}-override-fee-recipient
-      {{- end }}
         - name: data
           emptyDir: {}
 
