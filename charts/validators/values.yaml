@@ -40,7 +40,7 @@ initImageBusybox:
 cliImage:
   registry: "ghcr.io"
   repository: "cryptomanufaktur-io/sync-keys"
-  tag: "v0.0.1"
+  tag: "v0.0.2"
   pullPolicy: IfNotPresent
 
 ## Database connection string, ex. 'postgresql://username:pass@hostname/dbname'
@@ -177,6 +177,19 @@ flags:
     - "--log-destination=CONSOLE"
     - "--data-base-path=/data"
 
+builder:
+  # Whether to use a builder for proposals
+  enabled: true
+
+  # Extra flags to pass for VC builder
+  flags:
+    prysm:
+      - "--enable-builder"
+    lighthouse:
+      - "--builder-proposals"
+    teku:
+      - "--validators-builder-registration-default-enabled"
+      - "--validators-proposer-blinded-blocks-enabled"
 ## Validators extra flags
 ##
 extraFlags:
@@ -204,11 +217,6 @@ beaconChainRpcEndpointsRandomized: []
 ## ref: https://docs.prylabs.network/docs/prysm-usage/parameters#validator-configuration
 ##
 graffiti: ""
-
-## Override fees for solo validators
-## used for stakewise solo validators only
-##
-feeOverride: ""
 
 ## Monitoring
 ##

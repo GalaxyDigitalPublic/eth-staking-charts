@@ -153,6 +153,12 @@ spec:
             {{- end }}
             {{- end }}
 
+            {{- if $root.Values.builder.enabled }}
+            {{- range (pluck $root.Values.type $root.Values.builder.flags | first) }}
+            - {{ . | quote }}
+            {{- end }}
+            {{- end }}
+
             {{- range (pluck $root.Values.type $root.Values.extraFlags | first) }}
             - {{ . | quote }}
             {{- end -}}
