@@ -45,7 +45,7 @@ flywayImage:
   registry: "docker.io"
   repository: flyway/flyway
   tag: "10-alpine"
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 imagePullSecrets: []
 
