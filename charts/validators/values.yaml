@@ -60,9 +60,9 @@ enabled: true
 
 ## What type of validator to use.
 ## Options for Ethereum: prysm, lighthouse, teku
-## Options for Gnosis: prysm, lighthouse
+## Options for Gnosis: lighthouse
 ##
-type: prysm
+type: teku
 
 ## If you want to run multiple validator types (e.g lighouse, teku,...)
 ## you need to adjust the key index to prevent double signing.
@@ -103,16 +103,16 @@ image:
   pullPolicy: IfNotPresent
   prysm:
     registry: "gcr.io"
-    repository: "prysmaticlabs/prysm/validator"
-    tag: "v5.0.0"
+    repository: "prysmaticlabs/prysm-validator"
+    tag: "v5.0.1"
   lighthouse:
     registry: "docker.io"
     repository: "sigp/lighthouse"
-    tag: "v5.0.0"
+    tag: "v5.1.1-modern"
   teku:
     registry: "docker.io"
     repository: "consensys/teku"
-    tag: "24.2.0"
+    tag: "24.3.0"
 
 ## Credentials to fetch images from private registry
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
