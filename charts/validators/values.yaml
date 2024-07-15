@@ -150,6 +150,9 @@ affinity: {}
 ##
 priorityClassName: ""
 
+## Extra annotations for StatefulSet pods
+podAnnotations: {}
+
 ## Network ID
 ## Options for Ethereum: mainnet, holesky
 ## Options for Gnosis: gnosis
