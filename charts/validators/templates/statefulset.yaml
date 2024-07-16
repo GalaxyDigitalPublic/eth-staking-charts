@@ -35,6 +35,10 @@ spec:
     metadata:
       labels:
         {{- include "validators.selectorLabels" $root | nindent 8 }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       {{- with (concat $root.Values.imagePullSecrets $root.Values.global.imagePullSecrets) }}
       imagePullSecrets:
