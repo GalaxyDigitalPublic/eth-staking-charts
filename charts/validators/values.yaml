@@ -96,6 +96,7 @@ validatorsCount: 0
 ##
 suggestedFeeRecipient: ""
 
+
 ## Validators image version
 ## ref: https://gcr.io/prysmaticlabs/prysm/validator
 ## ref: https://hub.docker.com/r/sigp/lighthouse
@@ -193,6 +194,32 @@ builder:
     teku:
       - "--validators-builder-registration-default-enabled"
       - "--validators-proposer-blinded-blocks-enabled"
+keyManagerApi:
+  # Whether to enable the keymanager Api
+  enabled: true
+  flags:
+    prysm:
+      - "--web"
+      - "--grpc-gateway-host=0.0.0.0"
+      - "--grpc-gateway-port=7500"
+      - "--grpc-gateway-corsdomain=*"
+    lighthouse:
+      - "--http"
+      - "--http-port=7500"
+      - "--http-address=0.0.0.0"
+      - "--http-allow-origin=*"
+      - "--unencrypted-http-transport"
+    teku:
+      - "--validator-api-enabled=true"
+      - "--validator-api-interface=0.0.0.0"
+      - "--validator-api-port=7500"
+      - "--validator-api-host-allowlist=*"
+      - "--validator-api-cors-origins=*"
+# TLS. Mandatory for Teku but I don't have the init code yet to create it. For now, keymanager on Teku will fail
+#      - "--validator-api-keystore-file=/var/lib/teku/teku-keyapi.keystore"
+#      - "--validator-api-keystore-password-file=/var/lib/teku/teku-keyapi.password"
+
+
 ## Validators extra flags
 ##
 extraFlags:

@@ -163,6 +163,12 @@ spec:
             {{- end }}
             {{- end }}
 
+            {{- if $root.Values.keyManagerApi.enabled }}
+            {{- range (pluck $root.Values.type $root.Values.keyManagerApi.flags | first) }}
+            - {{ . | quote }}
+            {{- end }}
+            {{- end }}
+
             {{- range (pluck $root.Values.type $root.Values.extraFlags | first) }}
             - {{ . | quote }}
             {{- end -}}
