@@ -196,7 +196,9 @@ builder:
       - "--validators-proposer-blinded-blocks-enabled"
 keyManagerApi:
   # Whether to enable the keymanager Api
-  enabled: true
+  enabled: false
+  # Secret that contains the API token. Mandatory
+  tokenSecretName: "apitoken"
   flags:
     prysm:
       - "--web"
