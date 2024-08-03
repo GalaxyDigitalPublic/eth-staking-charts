@@ -194,9 +194,26 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+          {{- if and $root.Values.keyManagerApi.enabled $root.Values.keyManagerApi.tokenSecretName }}
+            {{- if eq $root.Values.type "prysm" }}
+            - name: apitoken
+              mountPath: /data/auth-token
+            {{- else if eq $root.Values.type "lighthouse" }}
+            - name: apitoken
+              mountPath: /data/lighthouse/validators/api-token.txt
+            {{- else if eq $root.Values.type "teku" }}
+            - name: apitoken
+              mountPath: /data/validator/key-manager/validator-api-bearer
+            {{- end }}
+          {{- end }}
       volumes:
         - name: data
           emptyDir: {}
+        {{- if and $root.Values.keyManagerApi.enabled $root.Values.keyManagerApi.tokenSecretName }}
+        - name: apitoken
+          secret:
+            secretName: {{ $root.Values.keyManagerApi.tokenSecretName }}
+        {{- end }}
 
 {{- end }}
 {{- end }}
