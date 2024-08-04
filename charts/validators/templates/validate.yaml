@@ -6,7 +6,7 @@
 {{- fail ".Values.suggestedFeeRecipient is empty" }}
 {{- end }}
 
-{{- if and .Values.keyManagerApi.enabled .Values.keyManagerApi.tokenSecretName }}
+{{- if and .Values.keyManagerApi.enabled .Values.keyManagerApi.tokenSecret.name }}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -26,30 +26,30 @@ spec:
     args:
       - |
         if [ ! -f /etc/secrets/token ]; then
-          echo "Error: Public key {{ .Values.keyManagerApi.tokenSecretPublicKey }} not found!"
+          echo "Error: Public key {{ .Values.keyManagerApi.tokenSecret.publicKey }} not found!"
           exit 1
         fi
 
-        {{- if .Values.keyManagerApi.tokenSecretPrivateKey }}
+        {{- if .Values.keyManagerApi.tokenSecret.privateKey }}
         if [ ! -f /etc/secrets/secret ]; then
-          echo "Error: Secret key {{ .Values.keyManagerApi.tokenSecretPrivateKey }} not found!"
+          echo "Error: Secret key {{ .Values.keyManagerApi.tokenSecret.privateKey }} not found!"
           exit 1
         fi
         {{- end }}
 
     volumeMounts:
-    {{- if .Values.keyManagerApi.tokenSecretPrivateKey }}
+    {{- if .Values.keyManagerApi.tokenSecret.privateKey }}
     - name: secret-volume
       mountPath: /etc/secrets/secret
-      subPath: {{ .Values.keyManagerApi.tokenSecretPrivateKey }}
+      subPath: {{ .Values.keyManagerApi.tokenSecret.privateKey }}
       readOnly: true
     {{- end }}
     - name: secret-volume
       mountPath: /etc/secrets/token
-      subPath: {{ .Values.keyManagerApi.tokenSecretPublicKey }}
+      subPath: {{ .Values.keyManagerApi.tokenSecret.publicKey }}
       readOnly: true
   volumes:
   - name: secret-volume
     secret:
-      secretName: {{ .Values.keyManagerApi.tokenSecretName }}
+      secretName: {{ .Values.keyManagerApi.tokenSecret.name }}
 {{- end}}
