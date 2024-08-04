@@ -198,15 +198,18 @@ spec:
             {{- if eq $root.Values.type "prysm" }}
             - name: apitoken
               mountPath: /data/auth-token
-              subPath: {{ $root.Values.keyManagerApi.tokenSecretKey }}
+              subPath: {{ $root.Values.keyManagerApi.tokenSecretPublicKey }}
             {{- else if eq $root.Values.type "lighthouse" }}
             - name: apitoken
               mountPath: /data/lighthouse/validators/api-token.txt
-              subPath: {{ $root.Values.keyManagerApi.tokenSecretKey }}
+              subPath: {{ $root.Values.keyManagerApi.tokenSecretPublicKey }}
+            - name: apitoken
+              mountPath: /data/lighthouse/validators/.secp-sk
+              subPath: {{ $root.Values.keyManagerApi.tokenSecretPrivateKey }}
             {{- else if eq $root.Values.type "teku" }}
             - name: apitoken
               mountPath: /data/validator/key-manager/validator-api-bearer
-              subPath: {{ $root.Values.keyManagerApi.tokenSecretKey }}
+              subPath: {{ $root.Values.keyManagerApi.tokenSecretPublicKey }}
             {{- end }}
           {{- end }}
       volumes:
