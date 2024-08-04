@@ -26,27 +26,27 @@ spec:
     args:
       - |
         if [ ! -f /etc/secrets/token ]; then
-          echo "Error: Secret token file not found!"
+          echo "Error: Public key {{ .Values.keyManagerApi.tokenSecretPublicKey }} not found!"
           exit 1
         fi
 
-        secret=$(cat /etc/secrets/token }})
-
-        if [ ${#secret} -lt 16 ]; then
-          echo "Error: Secret token must be at least 16 characters long"
+        {{- if .Values.keyManagerApi.tokenSecretPrivateKey }}
+        if [ ! -f /etc/secrets/secret ]; then
+          echo "Error: Secret key {{ .Values.keyManagerApi.tokenSecretPrivateKey }} not found!"
           exit 1
         fi
+        {{- end }}
 
-        if ! echo "$secret" | grep -Eq '^[A-Za-z0-9+/=]+$'; then
-          echo "Error: Secret token contains invalid characters"
-          exit 1
-        fi
-
-        echo "Secret token is valid"
     volumeMounts:
+    {{- if .Values.keyManagerApi.tokenSecretPrivateKey }}
+    - name: secret-volume
+      mountPath: /etc/secrets/secret
+      subPath: {{ .Values.keyManagerApi.tokenSecretPrivateKey }}
+      readOnly: true
+    {{- end }}
     - name: secret-volume
       mountPath: /etc/secrets/token
-      subPath: {{ .Values.keyManagerApi.tokenSecretKey }}
+      subPath: {{ .Values.keyManagerApi.tokenSecretPublicKey }}
       readOnly: true
   volumes:
   - name: secret-volume
