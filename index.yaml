@@ -3,13 +3,13 @@ entries:
   besu:
   - apiVersion: v2
     appVersion: 24.7.0
-    created: "2024-08-04T19:58:32.210872003Z"
+    created: "2024-08-04T20:17:40.213232521Z"
     dependencies:
     - name: common
       repository: https://charts.cryptomanufaktur.io/
       version: 1.x.x
     description: An enterprise-grade Java-based, Apache 2.0 licensed Ethereum client.
-    digest: b4d9cbb89f64e550dfb984be03bd5b7c8c122992f1a55e50eb03aa7f98a7cb1f
+    digest: 2e55c8c8bb7e768fd3c371bbfd2e2d51ba2e0ae8422edfdbe83aad0223cf6a34
     home: https://cryptomanufaktur.io/
     icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
     keywords:
@@ -119,10 +119,10 @@ entries:
   common:
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2024-08-04T19:58:32.211249433Z"
+    created: "2024-08-04T20:17:40.213427666Z"
     description: A Library Helm Chart for grouping common logic between stakewise
       charts. This chart is not deployable by itself.
-    digest: 3ddc6b18d1a0a1d371a81145f5b9af1283d7117271f5a438d8584aa9c22712d1
+    digest: b9e29cd37b505f04cdcf46bd00b09f5991a238ff125b6924e10102f3f02aae58
     name: common
     type: library
     urls:
@@ -131,13 +131,13 @@ entries:
   erigon:
   - apiVersion: v2
     appVersion: v2.60.3
-    created: "2024-08-04T19:58:32.21239093Z"
+    created: "2024-08-04T20:17:40.214342285Z"
     dependencies:
     - name: common
       repository: https://charts.cryptomanufaktur.io/
       version: 1.x.x
     description: Ethereum implementation on the efficiency frontier
-    digest: 491c97d83493fe215d3b8b32ebaee1df4740d2292d9c70a9da80a7784a40ba9d
+    digest: c728de6a0583446fadf66ada80f95807d206fca4b868d85cba0b9efb180d0e6c
     icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
     keywords:
     - ethereum
@@ -220,13 +220,13 @@ entries:
   geth:
   - apiVersion: v2
     appVersion: v1.14.6
-    created: "2024-08-04T19:58:32.213314191Z"
+    created: "2024-08-04T20:17:40.215246233Z"
     dependencies:
     - name: common
       repository: https://charts.cryptomanufaktur.io/
       version: 1.x.x
     description: Official Golang implementation of the Ethereum v1 protocol.
-    digest: 866ca456335dbc2e37281b0bd05ace95e9a3c8be00529f1193ae32724e9b8186
+    digest: 851226c1c5c19d01416d300f5611e7dabfc64e37b72cb63e3f4a77e482d19143
     home: https://www.ethereum.org/
     icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
     keywords:
@@ -317,13 +317,13 @@ entries:
   lighthouse:
   - apiVersion: v2
     appVersion: v5.2.1
-    created: "2024-08-04T19:58:32.214240087Z"
+    created: "2024-08-04T20:17:40.216141105Z"
     dependencies:
     - name: common
       repository: https://charts.cryptomanufaktur.io/
       version: 1.x.x
     description: Rust Ethereum Client.
-    digest: 935a0b71f85ed15eafaf5a2f589220e1ae71c6d0e7944f3cd8ec258f883797e1
+    digest: 8d406405d36162150ef142a91efac457b40e4d05fa2e72e9df39959962869d78
     home: https://www.ethereum.org/
     icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
     keywords:
@@ -438,14 +438,14 @@ entries:
   mev-boost:
   - apiVersion: v2
     appVersion: v1.7.1
-    created: "2024-08-04T19:58:32.214773848Z"
+    created: "2024-08-04T20:17:40.21662541Z"
     dependencies:
     - name: common
       repository: https://charts.cryptomanufaktur.io/
       version: 1.x.x
     description: mev-boost allows proof-of-stake Ethereum consensus clients to outsource
       block construction
-    digest: cfaa58b6c79097c8f6de586e3d9a50c5881311597c009c6eb0b172035fa17f17
+    digest: b01b102b2bdeff1eaba48ebc214587a142b0c8e26868a4179e9cf20f3ba72ba6
     home: https://boost.flashbots.net/
     keywords:
     - ethereum
@@ -479,13 +479,13 @@ entries:
   nethermind:
   - apiVersion: v2
     appVersion: v1.27.0
-    created: "2024-08-04T19:58:32.215731864Z"
+    created: "2024-08-04T20:17:40.217559074Z"
     dependencies:
     - name: common
       repository: https://charts.cryptomanufaktur.io/
       version: 1.x.x
     description: .NET Core Ethereum client
-    digest: 9e1a45039929eec4212531b04fee0b950b2a635e88cbb28dd2c09286267ed9f8
+    digest: 8774d9d25bf709e7b842459834baf2b3072720cef1546ec8380bac0fa3e8b0a0
     home: https://nethermind.io/
     icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
     keywords:
@@ -572,13 +572,13 @@ entries:
   nimbus:
   - apiVersion: v2
     appVersion: v24.6.0
-    created: "2024-08-04T19:58:32.216602596Z"
+    created: "2024-08-04T20:17:40.219230463Z"
     dependencies:
     - name: common
       repository: https://charts.cryptomanufaktur.io/
       version: 1.x.x
     description: Nim implementation of the Ethereum Beacon Chain
-    digest: d77da8376ea6748ad82ffe1b0af238299aa0156a2b305e17a8b593717f625ad8
+    digest: 52e1c38b47f89ecb3d75e933aba9751ef2da4653f8f439e92f91964a1a57d01f
     home: https://www.ethereum.org/
     icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
     keywords:
@@ -669,13 +669,13 @@ entries:
   prysm:
   - apiVersion: v2
     appVersion: v5.0.4
-    created: "2024-08-04T19:58:32.217553118Z"
+    created: "2024-08-04T20:17:40.22018184Z"
     dependencies:
     - name: common
       repository: https://charts.cryptomanufaktur.io/
       version: 1.x.x
     description: Go implementation of Ethereum proof of stake.
-    digest: 7deda6bde2db7d4e69d1412cbe761f7f12e5a5864be6d3c622b88d635d1c6196
+    digest: 6a4b00490792cf9466e90086b63ec950ba3ea631522283f03cfc8f42bba3bc6f
     home: https://www.ethereum.org/
     icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
     keywords:
@@ -790,13 +790,13 @@ entries:
   teku:
   - apiVersion: v2
     appVersion: 24.6.1
-    created: "2024-08-04T19:58:32.218531402Z"
+    created: "2024-08-04T20:17:40.221136904Z"
     dependencies:
     - name: common
       repository: https://charts.cryptomanufaktur.io/
       version: 1.x.x
     description: Teku is an open-source Ethereum client written in Java.
-    digest: 870d1203635309c2dfac32786d4ed4188b008a703b1a855a5f2212199a0fb698
+    digest: bd92747bdf4d0a43a1f54f91d33f0a467af11cf908804053406ed9e5ffd02b76
     home: https://cryptomanufaktur.io/
     icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
     keywords:
@@ -904,6 +904,23 @@ entries:
     - https://CryptoManufaktur-io.github.io/eth-staking-charts/teku-2.5.2.tgz
     version: 2.5.2
   validators:
+  - apiVersion: v2
+    appVersion: v4.1.5
+    created: "2024-08-04T20:17:40.221947618Z"
+    description: A Helm chart for installing validators with the web3signer.
+    digest: 0313e8d0aa5ba1dc381c4a42bb335efc1166111e167b6744fe770d9427a46fd3
+    home: https://cryptomanufaktur.io/
+    keywords:
+    - ethereum
+    - blockchain
+    - lighthouse
+    - prysm
+    - teku
+    name: validators
+    type: application
+    urls:
+    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.1.5.tgz
+    version: 4.1.5
   - apiVersion: v2
     appVersion: v4.1.4
     created: "2024-08-04T19:58:32.219961724Z"
@@ -1163,14 +1180,14 @@ entries:
   web3signer:
   - apiVersion: v2
     appVersion: v24.6.0
-    created: "2024-08-04T19:58:32.22086506Z"
+    created: "2024-08-04T20:17:40.222552959Z"
     dependencies:
     - name: common
       repository: https://charts.cryptomanufaktur.io/
       version: 1.x.x
     description: A Helm chart for installing and configuring large scale ETH staking
       infrastructure on top of the Kubernetes
-    digest: 1a0ddbb304ef5f1bfa31f7dbbca8d23f76f001c64c38769b36194eb870626d71
+    digest: 44d35a3d96cf0f429543da1afb3d0cda265f55cc2e22e4e1d150fadac6b0727d
     home: https://docs.web3signer.consensys.io/
     keywords:
     - ethereum
@@ -1291,4 +1308,4 @@ entries:
     urls:
     - https://CryptoManufaktur-io.github.io/eth-staking-charts/web3signer-4.1.3.tgz
     version: 4.1.3
-generated: "2024-08-04T19:58:32.209071277Z"
+generated: "2024-08-04T20:17:40.212163545Z"
