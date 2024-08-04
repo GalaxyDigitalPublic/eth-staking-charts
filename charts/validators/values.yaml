@@ -198,11 +198,12 @@ keyManagerApi:
   # Whether to enable the keymanager Api
   enabled: false
   # Secret that contains the API token.
-  tokenSecretName: "apitoken"
+  tokenSecret:
+    name: "apitoken"
   # Key containing the API auth token
-  tokenSecretPublicKey: "token"
+    publicKey: "token"
   # Key containing the corresponding secret key - Lighthouse
-  tokenSecretPrivateKey: "secret"
+    privateKey: "secret"
   flags:
     prysm:
       - "--web"
