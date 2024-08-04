@@ -197,8 +197,9 @@ builder:
 keyManagerApi:
   # Whether to enable the keymanager Api
   enabled: false
-  # Secret that contains the API token. Mandatory
+  # Secret that contains the API token.
   tokenSecretName: "apitoken"
+  tokenSecretKey: "token"
   flags:
     prysm:
       - "--web"
