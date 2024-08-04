@@ -6,53 +6,50 @@
 {{- fail ".Values.suggestedFeeRecipient is empty" }}
 {{- end }}
 
-{{- if and false .Values.keyManagerApi.enabled .Values.keyManagerApi.tokenSecretName }}
+{{- if and .Values.keyManagerApi.enabled .Values.keyManagerApi.tokenSecretName }}
 apiVersion: v1
 kind: Pod
 metadata:
   name: check-token-secret
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Release.Name }}
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
-    "helm.sh/hook-weight": "1"
     "helm.sh/hook-delete-policy": hook-succeeded
 spec:
+  restartPolicy: Never
   containers:
-  - name: check-token-secret
-    image: bitnami/kubectl:1.30
+  - name: check-secret
+    image: busybox
     command: ['sh', '-c']
     args:
       - |
-        # Check if the secret exists
-        if ! kubectl get secret {{ .Values.keyManagerApi.tokenSecretName }} -n {{ .Release.Namespace }} > /dev/null 2>&1; then
-          echo "Error: Secret \"{{ .Values.keyManagerApi.tokenSecretName }}\" not found in namespace \"{{ .Release.Namespace }}\""
+        if [ ! -f /etc/secrets/token ]; then
+          echo "Error: Secret token file not found!"
           exit 1
         fi
 
-        # Check if the specific key exists in the secret
-        secret_value=$(kubectl get secret {{ .Values.keyManagerApi.tokenSecretName }} -n {{ .Release.Namespace }} -o jsonpath="{.data.{{ .Values.keyManagerApi.tokenSecretKey }}}")
-        if [ -z "$secret_value" ]; then
-          echo "Error: Key \"{{ .Values.keyManagerApi.tokenSecretKey }}\" not found or empty in secret \"{{ .Values.keyManagerApi.tokenSecretName }}\" in namespace \"{{ .Release.Namespace }}\""
-          exit 1
-        fi
+        secret=$(cat /etc/secrets/token }})
 
-        # Retrieve the secret value
-        secret=$(kubectl get secret {{ .Values.keyManagerApi.tokenSecretName }} -n {{ .Release.Namespace }} -o jsonpath="{.data.{{ .Values.keyManagerApi.tokenSecretKey }}}" | base64 --decode)
-
-        # Check the length of the secret
         if [ ${#secret} -lt 16 ]; then
-          echo "Error: Secret \"{{ .Values.keyManagerApi.tokenSecretName }}\" must be at least 16 characters long"
+          echo "Error: Secret token must be at least 16 characters long"
           exit 1
         fi
 
-        # Check for valid Base64 characters
         if ! echo "$secret" | grep -Eq '^[A-Za-z0-9+/=]+$'; then
-          echo "Error: Secret \"{{ .Values.keyManagerApi.tokenSecretName }}\" contains invalid characters. Make sure it uses Base64 characters only."
+          echo "Error: Secret token contains invalid characters"
           exit 1
         fi
 
-        echo "Secret {{ .Values.keyManagerApi.tokenSecretName }} is valid"
-  restartPolicy: Never
-  serviceAccountName: secret-checker
+        echo "Secret token is valid"
+    volumeMounts:
+    - name: secret-volume
+      mountPath: /etc/secrets/token
+      subPath: {{ .Values.keyManagerApi.tokenSecretKey }}
+      readOnly: true
+  volumes:
+  - name: secret-volume
+    secret:
+      secretName: {{ .Values.keyManagerApi.tokenSecretName }}
 {{- end}}
