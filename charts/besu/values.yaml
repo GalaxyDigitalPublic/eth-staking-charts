@@ -95,7 +95,7 @@ image:
   repository: hyperledger/besu
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "24.7.1"
+  tag: "24.8.0"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -297,7 +297,7 @@ persistence:
 ## Sync Mode
 ## ref: https://besu.hyperledger.org/en/stable/public-networks/how-to/connect/sync-node
 ##
-syncMode: "X_SNAP"
+syncMode: "SNAP"
 
 ## Extra flags for besu node
 ##
