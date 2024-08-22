@@ -82,6 +82,8 @@ spec:
             - "/data"
             - "--index"
             - "{{ . }}"
+            - "--default-recipient"
+            - "{{ $root.Values.suggestedFeeRecipient }}"
           volumeMounts:
             - name: data
               mountPath: /data
