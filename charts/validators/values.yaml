@@ -33,7 +33,7 @@ initImageBusybox:
   registry: "docker.io"
   repository: "busybox"
   tag: "stable"
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 ## CLI image is used to fetch public keys.
 ##
@@ -41,7 +41,7 @@ cliImage:
   registry: "ghcr.io"
   repository: "cryptomanufaktur-io/sync-keys"
   tag: "v0.0.3"
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 ## Database connection string, ex. 'postgresql://username:pass@hostname/dbname'
 ##
@@ -101,7 +101,7 @@ suggestedFeeRecipient: ""
 ## ref: https://gcr.io/prysmaticlabs/prysm/validator
 ## ref: https://hub.docker.com/r/sigp/lighthouse
 image:
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   prysm:
     registry: "gcr.io"
     repository: "prysmaticlabs/prysm-validator"
