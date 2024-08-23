@@ -65,8 +65,6 @@ spec:
             - "/data"
             - "--default-recipient"
             - "{{ $root.Values.suggestedFeeRecipient }}"
-            - "--total-validators"
-            - "{{ $root.Values.validatorsCount }}"
           volumeMounts:
             - name: data
               mountPath: /data
