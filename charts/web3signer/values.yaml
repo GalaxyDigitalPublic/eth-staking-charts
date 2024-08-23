@@ -11,9 +11,9 @@ replicaCount: 3
 image:
   registry: "docker.io"
   repository: consensys/web3signer
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "24.6.0"
+  tag: "latest"
 
 ## Init image is used to chown data volume, etc.
 ##
@@ -21,15 +21,15 @@ initImage:
   registry: "docker.io"
   repository: busybox
   tag: "stable"
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 ## CLI image is used to fetch private keys.
 ##
 cliImage:
-  registry: "europe-west4-docker.pkg.dev"
-  repository: "stakewiselabs/public/key-manager"
-  tag: "v0.2.1"
-  pullPolicy: IfNotPresent
+  registry: "ghcr.io"
+  repository: "cryptomanufaktur-io/sync-keys"
+  tag: "v0.2.0"
+  pullPolicy: Always
 
 ## Database connection string, ex. 'postgresql://username:pass@hostname/dbname'
 ##
