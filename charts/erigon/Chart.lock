@@ -1,6 +1,0 @@
-dependencies:
-- name: common
-  repository: https://charts.cryptomanufaktur.io/
-  version: 1.0.0
-digest: sha256:756ec3f0a33b3e66ffae56df4f48876efa6d2982c23e9eda379671426e50d5f1
-generated: "2024-02-06T21:54:51.79086501Z"
