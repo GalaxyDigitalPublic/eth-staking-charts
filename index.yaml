@@ -22,7 +22,7 @@ entries:
     - https://github.com/hyperledger/besu
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/besu-2.3.16.tgz
+    - https://charts.staking.galaxy.com/besu-2.3.16.tgz
     version: 2.3.16
   - apiVersion: v2
     appVersion: 24.7.1
@@ -45,7 +45,7 @@ entries:
     - https://github.com/hyperledger/besu
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/besu-2.3.15.tgz
+    - https://charts.staking.galaxy.com/besu-2.3.15.tgz
     version: 2.3.15
   - apiVersion: v2
     appVersion: 24.7.0
@@ -68,7 +68,7 @@ entries:
     - https://github.com/hyperledger/besu
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/besu-2.3.14.tgz
+    - https://charts.staking.galaxy.com/besu-2.3.14.tgz
     version: 2.3.14
   - apiVersion: v2
     appVersion: 24.6.0
@@ -91,7 +91,7 @@ entries:
     - https://github.com/hyperledger/besu
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/besu-2.3.13.tgz
+    - https://charts.staking.galaxy.com/besu-2.3.13.tgz
     version: 2.3.13
   - apiVersion: v2
     appVersion: 24.5.2
@@ -114,7 +114,7 @@ entries:
     - https://github.com/hyperledger/besu
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/besu-2.3.12.tgz
+    - https://charts.staking.galaxy.com/besu-2.3.12.tgz
     version: 2.3.12
   - apiVersion: v2
     appVersion: 24.3.0
@@ -137,7 +137,7 @@ entries:
     - https://github.com/hyperledger/besu
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/besu-2.3.11.tgz
+    - https://charts.staking.galaxy.com/besu-2.3.11.tgz
     version: 2.3.11
   - apiVersion: v2
     appVersion: 24.1.1
@@ -160,7 +160,7 @@ entries:
     - https://github.com/hyperledger/besu
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/besu-2.3.10.tgz
+    - https://charts.staking.galaxy.com/besu-2.3.10.tgz
     version: 2.3.10
   common:
   - apiVersion: v2
@@ -172,7 +172,7 @@ entries:
     name: common
     type: library
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/common-1.0.0.tgz
+    - https://charts.staking.galaxy.com/common-1.0.0.tgz
     version: 1.0.0
   erigon:
   - apiVersion: v2
@@ -195,7 +195,7 @@ entries:
     - https://github.com/ledgerwatch/erigon
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/erigon-2.4.16.tgz
+    - https://charts.staking.galaxy.com/erigon-2.4.16.tgz
     version: 2.4.16
   - apiVersion: v2
     appVersion: v2.60.3
@@ -217,7 +217,7 @@ entries:
     - https://github.com/ledgerwatch/erigon
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/erigon-2.4.15.tgz
+    - https://charts.staking.galaxy.com/erigon-2.4.15.tgz
     version: 2.4.15
   - apiVersion: v2
     appVersion: v2.60.1
@@ -239,7 +239,7 @@ entries:
     - https://github.com/ledgerwatch/erigon
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/erigon-2.4.14.tgz
+    - https://charts.staking.galaxy.com/erigon-2.4.14.tgz
     version: 2.4.14
   - apiVersion: v2
     appVersion: v2.59.1
@@ -261,7 +261,7 @@ entries:
     - https://github.com/ledgerwatch/erigon
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/erigon-2.4.13.tgz
+    - https://charts.staking.galaxy.com/erigon-2.4.13.tgz
     version: 2.4.13
   - apiVersion: v2
     appVersion: v2.57.3
@@ -283,7 +283,7 @@ entries:
     - https://github.com/ledgerwatch/erigon
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/erigon-2.4.12.tgz
+    - https://charts.staking.galaxy.com/erigon-2.4.12.tgz
     version: 2.4.12
   geth:
   - apiVersion: v2
@@ -308,7 +308,7 @@ entries:
     - https://github.com/ethereum/go-ethereum/
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/geth-2.3.9.tgz
+    - https://charts.staking.galaxy.com/geth-2.3.9.tgz
     version: 2.3.9
   - apiVersion: v2
     appVersion: v1.14.6
@@ -332,7 +332,7 @@ entries:
     - https://github.com/ethereum/go-ethereum/
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/geth-2.3.8.tgz
+    - https://charts.staking.galaxy.com/geth-2.3.8.tgz
     version: 2.3.8
   - apiVersion: v2
     appVersion: v1.14.5
@@ -356,7 +356,7 @@ entries:
     - https://github.com/ethereum/go-ethereum/
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/geth-2.3.7.tgz
+    - https://charts.staking.galaxy.com/geth-2.3.7.tgz
     version: 2.3.7
   - apiVersion: v2
     appVersion: v1.13.14
@@ -380,7 +380,7 @@ entries:
     - https://github.com/ethereum/go-ethereum/
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/geth-2.3.6.tgz
+    - https://charts.staking.galaxy.com/geth-2.3.6.tgz
     version: 2.3.6
   - apiVersion: v2
     appVersion: v1.13.11
@@ -404,7 +404,7 @@ entries:
     - https://github.com/ethereum/go-ethereum/
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/geth-2.3.5.tgz
+    - https://charts.staking.galaxy.com/geth-2.3.5.tgz
     version: 2.3.5
   lighthouse:
   - apiVersion: v2
@@ -429,7 +429,7 @@ entries:
     - https://github.com/sigp/lighthouse
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/lighthouse-4.4.8.tgz
+    - https://charts.staking.galaxy.com/lighthouse-4.4.8.tgz
     version: 4.4.8
   - apiVersion: v2
     appVersion: v5.2.1
@@ -453,7 +453,7 @@ entries:
     - https://github.com/sigp/lighthouse
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/lighthouse-4.4.7.tgz
+    - https://charts.staking.galaxy.com/lighthouse-4.4.7.tgz
     version: 4.4.7
   - apiVersion: v2
     appVersion: v5.2.0
@@ -477,7 +477,7 @@ entries:
     - https://github.com/sigp/lighthouse
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/lighthouse-4.4.6.tgz
+    - https://charts.staking.galaxy.com/lighthouse-4.4.6.tgz
     version: 4.4.6
   - apiVersion: v2
     appVersion: v5.1.3
@@ -501,7 +501,7 @@ entries:
     - https://github.com/sigp/lighthouse
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/lighthouse-4.4.5.tgz
+    - https://charts.staking.galaxy.com/lighthouse-4.4.5.tgz
     version: 4.4.5
   - apiVersion: v2
     appVersion: v5.0.0
@@ -525,7 +525,7 @@ entries:
     - https://github.com/sigp/lighthouse
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/lighthouse-4.4.4.tgz
+    - https://charts.staking.galaxy.com/lighthouse-4.4.4.tgz
     version: 4.4.4
   - apiVersion: v2
     appVersion: v4.6.0
@@ -549,7 +549,7 @@ entries:
     - https://github.com/sigp/lighthouse
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/lighthouse-4.4.3.tgz
+    - https://charts.staking.galaxy.com/lighthouse-4.4.3.tgz
     version: 4.4.3
   mev-boost:
   - apiVersion: v2
@@ -570,7 +570,7 @@ entries:
     name: mev-boost
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/mev-boost-1.5.2.tgz
+    - https://charts.staking.galaxy.com/mev-boost-1.5.2.tgz
     version: 1.5.2
   - apiVersion: v2
     appVersion: v1.6.0
@@ -590,7 +590,7 @@ entries:
     name: mev-boost
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/mev-boost-1.5.1.tgz
+    - https://charts.staking.galaxy.com/mev-boost-1.5.1.tgz
     version: 1.5.1
   nethermind:
   - apiVersion: v2
@@ -614,7 +614,7 @@ entries:
     - https://github.com/NethermindEth/nethermind
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/nethermind-2.4.14.tgz
+    - https://charts.staking.galaxy.com/nethermind-2.4.14.tgz
     version: 2.4.14
   - apiVersion: v2
     appVersion: v1.27.1
@@ -637,7 +637,7 @@ entries:
     - https://github.com/NethermindEth/nethermind
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/nethermind-2.4.13.tgz
+    - https://charts.staking.galaxy.com/nethermind-2.4.13.tgz
     version: 2.4.13
   - apiVersion: v2
     appVersion: v1.27.0
@@ -660,7 +660,7 @@ entries:
     - https://github.com/NethermindEth/nethermind
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/nethermind-2.4.12.tgz
+    - https://charts.staking.galaxy.com/nethermind-2.4.12.tgz
     version: 2.4.12
   - apiVersion: v2
     appVersion: v1.26.0
@@ -683,7 +683,7 @@ entries:
     - https://github.com/NethermindEth/nethermind
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/nethermind-2.4.11.tgz
+    - https://charts.staking.galaxy.com/nethermind-2.4.11.tgz
     version: 2.4.11
   - apiVersion: v2
     appVersion: v1.25.4
@@ -706,7 +706,7 @@ entries:
     - https://github.com/NethermindEth/nethermind
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/nethermind-2.4.10.tgz
+    - https://charts.staking.galaxy.com/nethermind-2.4.10.tgz
     version: 2.4.10
   - apiVersion: v2
     appVersion: v1.25.3
@@ -729,7 +729,7 @@ entries:
     - https://github.com/NethermindEth/nethermind
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/nethermind-2.4.9.tgz
+    - https://charts.staking.galaxy.com/nethermind-2.4.9.tgz
     version: 2.4.9
   nimbus:
   - apiVersion: v2
@@ -754,7 +754,7 @@ entries:
     - https://github.com/status-im/nimbus-eth2
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/nimbus-2.2.16.tgz
+    - https://charts.staking.galaxy.com/nimbus-2.2.16.tgz
     version: 2.2.16
   - apiVersion: v2
     appVersion: v24.6.0
@@ -778,7 +778,7 @@ entries:
     - https://github.com/status-im/nimbus-eth2
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/nimbus-2.2.15.tgz
+    - https://charts.staking.galaxy.com/nimbus-2.2.15.tgz
     version: 2.2.15
   - apiVersion: v2
     appVersion: multiarch-v24.5.1
@@ -802,7 +802,7 @@ entries:
     - https://github.com/status-im/nimbus-eth2
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/nimbus-2.2.14.tgz
+    - https://charts.staking.galaxy.com/nimbus-2.2.14.tgz
     version: 2.2.14
   - apiVersion: v2
     appVersion: multiarch-v24.2.2
@@ -826,7 +826,7 @@ entries:
     - https://github.com/status-im/nimbus-eth2
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/nimbus-2.2.13.tgz
+    - https://charts.staking.galaxy.com/nimbus-2.2.13.tgz
     version: 2.2.13
   - apiVersion: v2
     appVersion: multiarch-v24.2.0
@@ -850,7 +850,7 @@ entries:
     - https://github.com/status-im/nimbus-eth2
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/nimbus-2.2.12.tgz
+    - https://charts.staking.galaxy.com/nimbus-2.2.12.tgz
     version: 2.2.12
   prysm:
   - apiVersion: v2
@@ -875,7 +875,7 @@ entries:
     - https://github.com/prysmaticlabs/prysm
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/prysm-4.0.15.tgz
+    - https://charts.staking.galaxy.com/prysm-4.0.15.tgz
     version: 4.0.15
   - apiVersion: v2
     appVersion: v5.0.3
@@ -899,7 +899,7 @@ entries:
     - https://github.com/prysmaticlabs/prysm
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/prysm-4.0.14.tgz
+    - https://charts.staking.galaxy.com/prysm-4.0.14.tgz
     version: 4.0.14
   - apiVersion: v2
     appVersion: v5.0.2
@@ -923,7 +923,7 @@ entries:
     - https://github.com/prysmaticlabs/prysm
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/prysm-4.0.13.tgz
+    - https://charts.staking.galaxy.com/prysm-4.0.13.tgz
     version: 4.0.13
   - apiVersion: v2
     appVersion: v5.0.0
@@ -947,7 +947,7 @@ entries:
     - https://github.com/prysmaticlabs/prysm
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/prysm-4.0.12.tgz
+    - https://charts.staking.galaxy.com/prysm-4.0.12.tgz
     version: 4.0.12
   - apiVersion: v2
     appVersion: v4.2.1
@@ -971,7 +971,7 @@ entries:
     - https://github.com/prysmaticlabs/prysm
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/prysm-4.0.11.tgz
+    - https://charts.staking.galaxy.com/prysm-4.0.11.tgz
     version: 4.0.11
   teku:
   - apiVersion: v2
@@ -995,7 +995,7 @@ entries:
     - https://github.com/ConsenSys/teku
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/teku-2.5.7.tgz
+    - https://charts.staking.galaxy.com/teku-2.5.7.tgz
     version: 2.5.7
   - apiVersion: v2
     appVersion: 24.6.1
@@ -1018,7 +1018,7 @@ entries:
     - https://github.com/ConsenSys/teku
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/teku-2.5.6.tgz
+    - https://charts.staking.galaxy.com/teku-2.5.6.tgz
     version: 2.5.6
   - apiVersion: v2
     appVersion: 24.4.0
@@ -1041,7 +1041,7 @@ entries:
     - https://github.com/ConsenSys/teku
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/teku-2.5.5.tgz
+    - https://charts.staking.galaxy.com/teku-2.5.5.tgz
     version: 2.5.5
   - apiVersion: v2
     appVersion: 24.3.1
@@ -1064,7 +1064,7 @@ entries:
     - https://github.com/ConsenSys/teku
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/teku-2.5.4.tgz
+    - https://charts.staking.galaxy.com/teku-2.5.4.tgz
     version: 2.5.4
   - apiVersion: v2
     appVersion: 24.2.0
@@ -1087,7 +1087,7 @@ entries:
     - https://github.com/ConsenSys/teku
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/teku-2.5.3.tgz
+    - https://charts.staking.galaxy.com/teku-2.5.3.tgz
     version: 2.5.3
   - apiVersion: v2
     appVersion: 24.1.1
@@ -1110,7 +1110,7 @@ entries:
     - https://github.com/ConsenSys/teku
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/teku-2.5.2.tgz
+    - https://charts.staking.galaxy.com/teku-2.5.2.tgz
     version: 2.5.2
   validators:
   - apiVersion: v2
@@ -1128,7 +1128,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-6.1.0.tgz
+    - https://charts.staking.galaxy.com/validators-6.1.0.tgz
     version: 6.1.0
   - apiVersion: v2
     appVersion: v6.0.0
@@ -1145,7 +1145,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-6.0.0.tgz
+    - https://charts.staking.galaxy.com/validators-6.0.0.tgz
     version: 6.0.0
   - apiVersion: v2
     appVersion: v5.0.0
@@ -1162,7 +1162,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-5.0.0.tgz
+    - https://charts.staking.galaxy.com/validators-5.0.0.tgz
     version: 5.0.0
   - apiVersion: v2
     appVersion: v4.2.1
@@ -1179,7 +1179,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.2.1.tgz
+    - https://charts.staking.galaxy.com/validators-4.2.1.tgz
     version: 4.2.1
   - apiVersion: v2
     appVersion: v4.2.0
@@ -1196,7 +1196,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.2.0.tgz
+    - https://charts.staking.galaxy.com/validators-4.2.0.tgz
     version: 4.2.0
   - apiVersion: v2
     appVersion: v4.1.6
@@ -1213,7 +1213,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.1.6.tgz
+    - https://charts.staking.galaxy.com/validators-4.1.6.tgz
     version: 4.1.6
   - apiVersion: v2
     appVersion: v4.1.5
@@ -1230,7 +1230,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.1.5.tgz
+    - https://charts.staking.galaxy.com/validators-4.1.5.tgz
     version: 4.1.5
   - apiVersion: v2
     appVersion: v4.1.4
@@ -1247,7 +1247,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.1.4.tgz
+    - https://charts.staking.galaxy.com/validators-4.1.4.tgz
     version: 4.1.4
   - apiVersion: v2
     appVersion: v4.1.3
@@ -1264,7 +1264,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.1.3.tgz
+    - https://charts.staking.galaxy.com/validators-4.1.3.tgz
     version: 4.1.3
   - apiVersion: v2
     appVersion: v4.1.2
@@ -1281,7 +1281,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.1.2.tgz
+    - https://charts.staking.galaxy.com/validators-4.1.2.tgz
     version: 4.1.2
   - apiVersion: v2
     appVersion: v4.1.1
@@ -1298,7 +1298,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.1.1.tgz
+    - https://charts.staking.galaxy.com/validators-4.1.1.tgz
     version: 4.1.1
   - apiVersion: v2
     appVersion: v4.1.0
@@ -1315,7 +1315,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.1.0.tgz
+    - https://charts.staking.galaxy.com/validators-4.1.0.tgz
     version: 4.1.0
   - apiVersion: v2
     appVersion: v4.0.8
@@ -1332,7 +1332,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.0.8.tgz
+    - https://charts.staking.galaxy.com/validators-4.0.8.tgz
     version: 4.0.8
   - apiVersion: v2
     appVersion: v4.0.6
@@ -1349,7 +1349,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.0.7.tgz
+    - https://charts.staking.galaxy.com/validators-4.0.7.tgz
     version: 4.0.7
   - apiVersion: v2
     appVersion: v4.0.6
@@ -1366,7 +1366,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.0.6.tgz
+    - https://charts.staking.galaxy.com/validators-4.0.6.tgz
     version: 4.0.6
   - apiVersion: v2
     appVersion: v4.0.4
@@ -1383,7 +1383,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.0.4.tgz
+    - https://charts.staking.galaxy.com/validators-4.0.4.tgz
     version: 4.0.4
   - apiVersion: v2
     appVersion: v4.0.3
@@ -1400,7 +1400,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.0.3.tgz
+    - https://charts.staking.galaxy.com/validators-4.0.3.tgz
     version: 4.0.3
   - apiVersion: v2
     appVersion: v4.0.2
@@ -1417,7 +1417,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.0.2.tgz
+    - https://charts.staking.galaxy.com/validators-4.0.2.tgz
     version: 4.0.2
   - apiVersion: v2
     appVersion: v4.0.1
@@ -1434,7 +1434,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.0.1.tgz
+    - https://charts.staking.galaxy.com/validators-4.0.1.tgz
     version: 4.0.1
   - apiVersion: v2
     appVersion: v4.0.0
@@ -1451,7 +1451,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-4.0.0.tgz
+    - https://charts.staking.galaxy.com/validators-4.0.0.tgz
     version: 4.0.0
   - apiVersion: v2
     appVersion: v3.5.7
@@ -1468,7 +1468,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-3.5.7.tgz
+    - https://charts.staking.galaxy.com/validators-3.5.7.tgz
     version: 3.5.7
   - apiVersion: v2
     appVersion: v3.5.6
@@ -1486,7 +1486,7 @@ entries:
     name: validators
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/validators-3.5.6.tgz
+    - https://charts.staking.galaxy.com/validators-3.5.6.tgz
     version: 3.5.6
   web3signer:
   - apiVersion: v2
@@ -1508,7 +1508,7 @@ entries:
     name: web3signer
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/web3signer-5.0.0.tgz
+    - https://charts.staking.galaxy.com/web3signer-5.0.0.tgz
     version: 5.0.0
   - apiVersion: v2
     appVersion: v24.6.0
@@ -1529,7 +1529,7 @@ entries:
     name: web3signer
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/web3signer-4.1.8.tgz
+    - https://charts.staking.galaxy.com/web3signer-4.1.8.tgz
     version: 4.1.8
   - apiVersion: v2
     appVersion: v24.2.0
@@ -1550,7 +1550,7 @@ entries:
     name: web3signer
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/web3signer-4.1.7.tgz
+    - https://charts.staking.galaxy.com/web3signer-4.1.7.tgz
     version: 4.1.7
   - apiVersion: v2
     appVersion: v24.2.0
@@ -1571,7 +1571,7 @@ entries:
     name: web3signer
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/web3signer-4.1.6.tgz
+    - https://charts.staking.galaxy.com/web3signer-4.1.6.tgz
     version: 4.1.6
   - apiVersion: v2
     appVersion: v24.1.1
@@ -1592,7 +1592,7 @@ entries:
     name: web3signer
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/web3signer-4.1.5.tgz
+    - https://charts.staking.galaxy.com/web3signer-4.1.5.tgz
     version: 4.1.5
   - apiVersion: v2
     appVersion: v24.1.1
@@ -1615,7 +1615,7 @@ entries:
     name: web3signer
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/web3signer-4.1.4.tgz
+    - https://charts.staking.galaxy.com/web3signer-4.1.4.tgz
     version: 4.1.4
   - apiVersion: v2
     appVersion: v24.1.1
@@ -1638,6 +1638,6 @@ entries:
     name: web3signer
     type: application
     urls:
-    - https://CryptoManufaktur-io.github.io/eth-staking-charts/web3signer-4.1.3.tgz
+    - https://charts.staking.galaxy.com/web3signer-4.1.3.tgz
     version: 4.1.3
 generated: "2024-08-23T10:31:21.425302432Z"
