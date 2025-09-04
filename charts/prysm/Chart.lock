@@ -1,0 +1,6 @@
+dependencies:
+- name: common
+  repository: https://charts.staking.galaxy.com/
+  version: 1.0.0
+digest: sha256:752f3830d49df5de1f999716ad63569ce54686bacf95bae393a4e59a22bf2e3d
+generated: "2025-09-04T19:24:27.132423+08:00"
