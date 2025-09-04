@@ -27,8 +27,8 @@ initImage:
 ##
 cliImage:
   registry: "ghcr.io"
-  repository: "cryptomanufaktur-io/sync-keys"
-  tag: "v0.2.0"
+  repository: "galaxydigitalpublic/sync-keys"
+  tag: "v0.3.2"
   pullPolicy: Always
 
 ## Database connection string, ex. 'postgresql://username:pass@hostname/dbname'
