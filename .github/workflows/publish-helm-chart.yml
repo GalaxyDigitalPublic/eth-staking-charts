@@ -25,7 +25,7 @@ jobs:
           curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
           chmod 700 get_helm.sh
           ./get_helm.sh
-          helm repo add eth-staking https://charts.cryptomanufaktur.io
+          helm repo add eth-staking https://charts.staking.galaxy.com
 
       - name: Build Helm Chart Dependencies
         run: |
@@ -51,7 +51,7 @@ jobs:
       - name: Update Helm repo index
         run: |
           cd package
-          helm repo index --merge ../gh-pages/index.yaml --url https://CryptoManufaktur-io.github.io/eth-staking-charts/ .
+          helm repo index --merge ../gh-pages/index.yaml --url https://GalaxyDigitalPublic.github.io/eth-staking-charts/ .
           cd ..
 
       - name: Commit and push changes
