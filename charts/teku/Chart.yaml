@@ -2,7 +2,7 @@ apiVersion: v2
 name: teku
 description: Teku is an open-source Ethereum client written in Java.
 icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
-home: https://cryptomanufaktur.io/
+home: https://galaxy.com/staking
 sources:
   - https://github.com/ConsenSys/teku
 
@@ -19,7 +19,7 @@ type: application
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 2.5.7
+version: 2.5.8
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
@@ -35,5 +35,5 @@ keywords:
 
 dependencies:
 - name: common
-  repository: https://charts.cryptomanufaktur.io/
+  repository: https://charts.staking.galaxy.com/
   version: 1.x.x

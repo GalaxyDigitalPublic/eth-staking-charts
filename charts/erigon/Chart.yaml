@@ -24,7 +24,7 @@ sources:
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 2.4.16
+version: 2.4.17
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
@@ -35,4 +35,4 @@ appVersion: "v2.60.4"
 dependencies:
   - name: common
     version: 1.x.x
-    repository: https://charts.cryptomanufaktur.io/
+    repository: https://charts.staking.galaxy.com/

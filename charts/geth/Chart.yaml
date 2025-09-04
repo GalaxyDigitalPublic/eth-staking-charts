@@ -1,6 +1,6 @@
 apiVersion: v2
 name: geth
-version: 2.3.9
+version: 2.3.10
 appVersion: v1.14.7
 kubeVersion: "^1.20.0-0"
 description: Official Golang implementation of the Ethereum v1 protocol.
@@ -18,4 +18,4 @@ icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/imag
 dependencies:
   - name: common
     version: 1.x.x
-    repository: https://charts.cryptomanufaktur.io/
+    repository: https://charts.staking.galaxy.com/

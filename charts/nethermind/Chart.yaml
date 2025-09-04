@@ -2,7 +2,7 @@ apiVersion: v2
 name: nethermind
 description: .NET Core Ethereum client
 type: application
-version: 2.4.14
+version: 2.4.15
 appVersion: "v1.28.0"
 keywords:
   - ethereum
@@ -16,5 +16,5 @@ icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/imag
 
 dependencies:
 - name: common
-  repository: https://charts.cryptomanufaktur.io/
+  repository: https://charts.staking.galaxy.com/
   version: 1.x.x
