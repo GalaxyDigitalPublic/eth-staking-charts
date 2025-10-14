@@ -60,3 +60,100 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+
+{{/*
+Generic init container template
+Usage in template:
+{{ $root := $ }}
+{{ range .Values.initContainers }}
+{{ include "web3signer.initContainer" (merge . (dict "root" $root)) | nindent 6 }}
+{{ end }}
+
+Container object structure:
+  name: string (required)
+  image: string (optional - full image path)
+  tag: string (optional - defaults to main container tag)
+  registry: string (optional - defaults to main container registry)
+  repository: string (optional - defaults to main container repository)
+  pullPolicy: string (optional - defaults to main container pullPolicy)
+  command: []string (optional)
+  args: []string (optional)
+  env: []object (optional)
+  envFrom: []object (optional)
+  securityContext: object (optional - defaults to main container securityContext)
+  resources: object (optional)
+  volumeMounts: []object (optional)
+  workingDir: string (optional)
+  ports: []object (optional)
+  restartPolicy: string (optional)
+*/}}
+{{- define "web3signer.initContainer" -}}
+{{- $mainImage := .root.Values.image -}}
+
+- name: {{ .name }}
+  {{- if .image }}
+  image: {{ .image }}
+  {{- else }}
+  image: "{{ .registry | default $mainImage.registry }}/{{ .repository | default $mainImage.repository }}:{{ .tag | default $mainImage.tag | default .root.Chart.AppVersion }}"
+  {{- end }}
+  imagePullPolicy: {{ .pullPolicy | default $mainImage.pullPolicy }}
+  {{- if .command }}
+  command:
+    {{- toYaml .command | nindent 4 }}
+  {{- end }}
+  {{- if .args }}
+  args:
+    {{- $root := .root }}
+    {{- range .args }}
+    {{- if typeIs "string" . }}
+    - {{ tpl . $root }}
+    {{- else }}
+    - {{ . }}
+    {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- if .workingDir }}
+  workingDir: {{ .workingDir }}
+  {{- end }}
+  {{- if .env }}
+  env:
+    {{- toYaml .env | nindent 4 }}
+  {{- end }}
+  {{- if .envFrom }}
+  envFrom:
+    {{- $root := .root }}
+    {{- range .envFrom }}
+    {{- if .secretRef }}
+    - secretRef:
+        {{- if .secretRef.name }}
+        name: {{ tpl .secretRef.name $root }}
+        {{- end }}
+        {{- if .secretRef.optional }}
+        optional: {{ .secretRef.optional }}
+        {{- end }}
+    {{- else }}
+    - {{ toYaml . | nindent 6 }}
+    {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- if .ports }}
+  ports:
+    {{- toYaml .ports | nindent 4 }}
+  {{- end }}
+  {{- if or .securityContext .root.Values.securityContext }}
+  securityContext:
+    {{- toYaml (.securityContext | default .root.Values.securityContext) | nindent 4 }}
+  {{- end }}
+  {{- if .resources }}
+  resources:
+    {{- toYaml .resources | nindent 4 }}
+  {{- end }}
+  {{- if .volumeMounts }}
+  volumeMounts:
+    {{- toYaml .volumeMounts | nindent 4 }}
+  {{- end }}
+  {{- if .restartPolicy }}
+  restartPolicy: {{ .restartPolicy }}
+  {{- end }}
+{{- end -}}

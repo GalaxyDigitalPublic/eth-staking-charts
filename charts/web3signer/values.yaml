@@ -57,7 +57,6 @@ nameOverride: ""
 ##
 fullnameOverride: ""
 
-
 ## Web3Signer Settings
 ## ref: https://docs.web3signer.consensys.net/en/latest/Reference/CLI/CLI-Syntax/
 ##
@@ -111,7 +110,17 @@ web3signerJavaOpts: "-Xmx1g -Xms1g"
 ##
 keyManagerApiEnabled: "false"
 
-## Extra flags for web3signer
+## Override the container command (if specified, overrides Docker ENTRYPOINT)
+## Leave empty to use the default Docker ENTRYPOINT: ["/opt/web3signer/bin/web3signer"]
+##
+command: []
+
+## Override the container args (if specified, overrides the default args)
+## Default args when not overridden: ["--config-file=/config/config.yaml", "eth2"]
+##
+args: []
+
+## Extra flags for web3signer (appended to args)
 ##
 extraFlags:
   - --slashing-protection-pruning-at-boot-enabled=true
@@ -205,3 +214,72 @@ serviceMonitor:
   ## @param metrics.serviceMonitor.additionalLabels Additional labels that can be used so ServiceMonitor resource(s) can be discovered by Prometheus
   ##
   additionalLabels: {}
+
+initContainers:
+  # Initialize data directories and set proper ownership
+  - name: init
+    registry: "docker.io"
+    repository: busybox
+    tag: "stable"
+    pullPolicy: Always
+    securityContext:
+      runAsUser: 0
+    command:
+      - sh
+      - -ac
+      - >
+        mkdir -p /data/web3signer /data/keystore;
+        chown -R 1000:1000 /data/web3signer
+    volumeMounts:
+      - name: data
+        mountPath: /data
+
+  # Fetch validator keys from database
+  - name: fetch-keys
+    registry: "ghcr.io"
+    repository: "galaxydigitalpublic/sync-keys"
+    tag: "v0.3.2"
+    pullPolicy: Always
+    securityContext:
+      runAsUser: 0
+    args:
+      - sync-web3signer-keys
+      - --db-url
+      - "{{ .Values.dbKeystoreUrl }}"
+      - --output-dir
+      - /data/keystore
+    envFrom:
+      - secretRef:
+          name: '{{ include "common.names.fullname" . }}'
+    volumeMounts:
+      - name: data
+        mountPath: /data
+
+  # Copy database migration files
+  - name: copy-migrations
+    # Uses main container image by default (no image config specified)
+    command:
+      - sh
+      - -ac
+      - cp -v /opt/web3signer/migrations/postgresql/* /migrations/
+    volumeMounts:
+      - name: migrations
+        mountPath: /migrations
+
+  # Run database migrations
+  - name: migrations
+    registry: "docker.io"
+    repository: flyway/flyway
+    tag: "10-alpine"
+    pullPolicy: Always
+    securityContext:
+      runAsUser: 0
+    args:
+      - "-user={{ .Values.dbUsername }}"
+      - "-password={{ .Values.dbPassword }}"
+      - "-url={{ .Values.dbUrl }}"
+      - "-locations=filesystem:/migrations"
+      - "migrate"
+    volumeMounts:
+      - name: migrations
+        mountPath: /migrations
