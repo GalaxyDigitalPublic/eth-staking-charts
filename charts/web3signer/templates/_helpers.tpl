@@ -67,93 +67,84 @@ Generic init container template
 Usage in template:
 {{ $root := $ }}
 {{ range .Values.initContainers }}
-{{ include "web3signer.initContainer" (merge . (dict "root" $root)) | nindent 6 }}
+{{ include "web3signer.initContainer" (dict "root" $root "container" .) | nindent 6 }}
 {{ end }}
 
 Container object structure:
   name: string (required)
-  image: string (optional - full image path)
-  tag: string (optional - defaults to main container tag)
-  registry: string (optional - defaults to main container registry)
-  repository: string (optional - defaults to main container repository)
-  pullPolicy: string (optional - defaults to main container pullPolicy)
-  command: []string (optional)
-  args: []string (optional)
-  env: []object (optional)
-  envFrom: []object (optional)
+  image: object/string (optional)
+    - If object: (defaults to main container image values)
+    - If object:
+      registry: string (optional)
+      repository: string (optional)
+      tag: string (optional)
+      pullPolicy: string (optional)
+    - If string: full image path
+  command: []string (optional - if not set, container's default ENTRYPOINT is used)
+  args: []string (optional - if args contain templates they will be rendered)
+  env: []object (optional - if templates they will be rendered)
+  envFrom: []object (optional - if templates they will be rendered)
   securityContext: object (optional - defaults to main container securityContext)
   resources: object (optional)
-  volumeMounts: []object (optional)
+  volumeMounts: []object (optional - if templates they will be rendered)
   workingDir: string (optional)
-  ports: []object (optional)
+  ports: []object (optional - if templates they will be rendered)
   restartPolicy: string (optional)
 */}}
 {{- define "web3signer.initContainer" -}}
+{{- if not .container.name -}}
+  {{- fail "Init container name is required but not provided" -}}
+{{- end -}}
 {{- $mainImage := .root.Values.image -}}
 
-- name: {{ .name }}
-  {{- if .image }}
-  image: {{ .image }}
+- name: {{ .container.name }}
+  {{- if .container.image }}
+  {{- if typeIs "string" .container.image }}
+  image: {{ .container.image }}
+  {{- else if typeIs "object" .container.image }}
+  image: "{{ .container.image.registry }}/{{ .container.image.repository }}:{{ .container.image.tag }}"
+  {{- end }}
+  imagePullPolicy: {{ .container.image.pullPolicy | default $mainImage.pullPolicy }}
   {{- else }}
-  image: "{{ .registry | default $mainImage.registry }}/{{ .repository | default $mainImage.repository }}:{{ .tag | default $mainImage.tag | default .root.Chart.AppVersion }}"
+  image: "{{ $mainImage.registry }}/{{ $mainImage.repository }}:{{ $mainImage.tag | default .root.Chart.AppVersion }}"
+  imagePullPolicy: {{ $mainImage.pullPolicy }}
   {{- end }}
-  imagePullPolicy: {{ .pullPolicy | default $mainImage.pullPolicy }}
-  {{- if .command }}
+  {{- if .container.command }}
   command:
-    {{- toYaml .command | nindent 4 }}
+    {{- toYaml .container.command | nindent 4 }}
   {{- end }}
-  {{- if .args }}
+  {{- if .container.args }}
   args:
-    {{- $root := .root }}
-    {{- range .args }}
-    {{- if typeIs "string" . }}
-    - {{ tpl . $root }}
-    {{- else }}
-    - {{ . }}
-    {{- end }}
-    {{- end }}
+    {{- (tpl (toYaml .container.args) .root) | nindent 2 }}
   {{- end }}
-  {{- if .workingDir }}
-  workingDir: {{ .workingDir }}
+  {{- if .container.workingDir }}
+  workingDir: {{ .container.workingDir }}
   {{- end }}
-  {{- if .env }}
+  {{- if .container.env }}
   env:
-    {{- toYaml .env | nindent 4 }}
+    {{- (tpl (toYaml .container.env) .root) | nindent 2 }}
   {{- end }}
-  {{- if .envFrom }}
+  {{- if .container.envFrom }}
   envFrom:
-    {{- $root := .root }}
-    {{- range .envFrom }}
-    {{- if .secretRef }}
-    - secretRef:
-        {{- if .secretRef.name }}
-        name: {{ tpl .secretRef.name $root }}
-        {{- end }}
-        {{- if .secretRef.optional }}
-        optional: {{ .secretRef.optional }}
-        {{- end }}
-    {{- else }}
-    - {{ toYaml . | nindent 6 }}
-    {{- end }}
-    {{- end }}
+    {{- (tpl (toYaml .container.envFrom) .root) | nindent 4 }}
   {{- end }}
-  {{- if .ports }}
+  {{- if .container.ports }}
   ports:
-    {{- toYaml .ports | nindent 4 }}
+    {{- (tpl (toYaml .container.ports) .root) | nindent 4 }}
   {{- end }}
-  {{- if or .securityContext .root.Values.securityContext }}
+  {{- if or .container.securityContext .root.Values.securityContext }}
   securityContext:
-    {{- toYaml (.securityContext | default .root.Values.securityContext) | nindent 4 }}
+    {{- toYaml (.container.securityContext | default .root.Values.securityContext) | nindent 4 }}
   {{- end }}
-  {{- if .resources }}
+  {{- if .container.resources }}
   resources:
-    {{- toYaml .resources | nindent 4 }}
+    {{- toYaml .container.resources | nindent 4 }}
   {{- end }}
-  {{- if .volumeMounts }}
+  {{- if .container.volumeMounts }}
   volumeMounts:
-    {{- toYaml .volumeMounts | nindent 4 }}
+    {{- tpl (toYaml .container.volumeMounts) .root | nindent 4 }}
   {{- end }}
-  {{- if .restartPolicy }}
-  restartPolicy: {{ .restartPolicy }}
+  {{- if .container.restartPolicy }}
+  restartPolicy: {{ .container.restartPolicy }}
   {{- end }}
 {{- end -}}

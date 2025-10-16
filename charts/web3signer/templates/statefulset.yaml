@@ -42,7 +42,7 @@ spec:
       initContainers:
         {{- $root := $ }}
         {{- range .Values.initContainers }}
-        {{- include "web3signer.initContainer" (merge . (dict "root" $root)) | nindent 8 }}
+        {{- include "web3signer.initContainer" (dict "root" $root "container" .) | nindent 8 }}
         {{- end }}
       {{- end }}
       containers:
@@ -57,19 +57,7 @@ spec:
           {{- end }}
           {{- if or .Values.args .Values.extraFlags }}
           args:
-            {{- if .Values.args }}
             {{- toYaml .Values.args | nindent 12 }}
-            {{- else }}
-            - --config-file=/config/config.yaml
-            - eth2
-            {{- end }}
-            {{- range .Values.extraFlags }}
-            - {{ . | quote }}
-            {{- end }}
-          {{- else }}
-          args:
-            - --config-file=/config/config.yaml
-            - eth2
           {{- end }}
           env:
             - name: JAVA_OPTS
