@@ -240,7 +240,7 @@ initContainers:
     args:
       - sync-web3signer-keys
       - --db-url
-      - "{{ .Values.dbKeystoreUrl }}"
+      - '{{ .Values.dbKeystoreUrl }}'
       - --output-dir
       - /data/keystore
     envFrom:
@@ -271,11 +271,11 @@ initContainers:
     securityContext:
       runAsUser: 0
     args:
-      - "-user={{ .Values.dbUsername }}"
-      - "-password={{ .Values.dbPassword }}"
-      - "-url={{ .Values.dbUrl }}"
-      - "-locations=filesystem:/migrations"
-      - "migrate"
+      - '-user={{ .Values.dbUsername }}'
+      - '-password={{ .Values.dbPassword }}'
+      - '-url={{ .Values.dbUrl }}'
+      - '-locations=filesystem:/migrations'
+      - 'migrate'
     volumeMounts:
       - name: migrations
         mountPath: /migrations

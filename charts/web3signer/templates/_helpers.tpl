@@ -101,7 +101,7 @@ Container object structure:
   {{- if .container.image }}
   {{- if typeIs "string" .container.image }}
   image: {{ .container.image }}
-  {{- else if typeIs "object" .container.image }}
+  {{- else }}
   image: "{{ .container.image.registry }}/{{ .container.image.repository }}:{{ .container.image.tag }}"
   {{- end }}
   imagePullPolicy: {{ .container.image.pullPolicy | default $mainImage.pullPolicy }}
@@ -132,10 +132,8 @@ Container object structure:
   ports:
     {{- (tpl (toYaml .container.ports) .root) | nindent 4 }}
   {{- end }}
-  {{- if or .container.securityContext .root.Values.securityContext }}
   securityContext:
     {{- toYaml (.container.securityContext | default .root.Values.securityContext) | nindent 4 }}
-  {{- end }}
   {{- if .container.resources }}
   resources:
     {{- toYaml .container.resources | nindent 4 }}
