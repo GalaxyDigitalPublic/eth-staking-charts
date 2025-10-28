@@ -15,22 +15,6 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
-## Init image is used to chown data volume, etc.
-##
-initImage:
-  registry: "docker.io"
-  repository: busybox
-  tag: "stable"
-  pullPolicy: Always
-
-## CLI image is used to fetch private keys.
-##
-cliImage:
-  registry: "ghcr.io"
-  repository: "galaxydigitalpublic/sync-keys"
-  tag: "v0.3.2"
-  pullPolicy: Always
-
 ## Database connection string, ex. 'postgresql://username:pass@hostname/dbname'
 ##
 dbKeystoreUrl: ""
@@ -56,7 +40,6 @@ nameOverride: ""
 ## Provide a name to substitute for the full names of resources
 ##
 fullnameOverride: ""
-
 
 ## Web3Signer Settings
 ## ref: https://docs.web3signer.consensys.net/en/latest/Reference/CLI/CLI-Syntax/
@@ -111,9 +94,16 @@ web3signerJavaOpts: "-Xmx1g -Xms1g"
 ##
 keyManagerApiEnabled: "false"
 
-## Extra flags for web3signer
+## Override the container command (if specified, overrides Docker ENTRYPOINT)
+## Leave empty to use the default Docker ENTRYPOINT: ["/opt/web3signer/bin/web3signer"]
 ##
-extraFlags:
+command: []
+
+## Override the container args (if specified, overrides the default args)
+##
+args:
+  - --config-file=/config/config.yaml
+  - eth2
   - --slashing-protection-pruning-at-boot-enabled=true
 
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
@@ -205,3 +195,87 @@ serviceMonitor:
   ## @param metrics.serviceMonitor.additionalLabels Additional labels that can be used so ServiceMonitor resource(s) can be discovered by Prometheus
   ##
   additionalLabels: {}
+
+# A Note about Init Containers:
+# The init containers are used to prepare the environment before the main web3signer container starts.
+# The default init containers handle common tasks such as initializing data directories, fetching keys from a database, copying migration files, and running database migrations.
+#
+# Users can easily modify the existing init containers or add new ones as needed by editing the values.yaml file.
+# However, if you need to make a change to this list, you MUST include _every_ init container you want to run, as this list
+# completely replaces the default list.
+#
+# Some values in the init containers can be templated using Helm templating.
+# See the _helpers.tpl, `web3signer.initContainer` template and look for `tpl`
+# to know which fields support templating.
+
+initContainers:
+  # Initialize data directories and set proper ownership
+  - name: init
+    image:
+      registry: "docker.io"
+      repository: busybox
+      tag: "stable"
+      pullPolicy: Always
+    securityContext:
+      runAsUser: 0
+    command:
+      - sh
+      - -ac
+      - >
+        mkdir -p /data/web3signer /data/keystore;
+        chown -R 1000:1000 /data/web3signer
+    volumeMounts:
+      - name: data
+        mountPath: /data
+
+  # Fetch validator keys from database
+  - name: fetch-keys
+    image:
+      registry: "ghcr.io"
+      repository: "galaxydigitalpublic/sync-keys"
+      tag: "v0.3.2"
+      pullPolicy: Always
+    securityContext:
+      runAsUser: 0
+    args:
+      - sync-web3signer-keys
+      - --db-url
+      - '{{ .Values.dbKeystoreUrl }}'
+      - --output-dir
+      - /data/keystore
+    envFrom:
+      - secretRef:
+          name: '{{ include "common.names.fullname" . }}'
+    volumeMounts:
+      - name: data
+        mountPath: /data
+
+  # Copy database migration files
+  - name: copy-migrations
+    # Uses main container image by default (no image config specified)
+    command:
+      - sh
+      - -ac
+      - cp -v /opt/web3signer/migrations/postgresql/* /migrations/
+    volumeMounts:
+      - name: migrations
+        mountPath: /migrations
+
+  # Run database migrations
+  - name: migrations
+    image:
+      registry: "docker.io"
+      repository: flyway/flyway
+      tag: "10-alpine"
+      pullPolicy: Always
+    securityContext:
+      runAsUser: 0
+    args:
+      - '-user={{ .Values.dbUsername }}'
+      - '-password={{ .Values.dbPassword }}'
+      - '-url={{ .Values.dbUrl }}'
+      - '-locations=filesystem:/migrations'
+      - 'migrate'
+    volumeMounts:
+      - name: migrations
+        mountPath: /migrations

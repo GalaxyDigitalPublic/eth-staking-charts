@@ -38,70 +38,26 @@ spec:
       serviceAccountName: {{ include "web3signer.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.initContainers }}
       initContainers:
-        - name: init
-          image: "{{ .Values.initImage.registry }}/{{ .Values.initImage.repository }}:{{ .Values.initImage.tag }}"
-          imagePullPolicy: {{ .Values.initImage.pullPolicy }}
-          securityContext:
-            runAsUser: 0
-          command:
-            - sh
-            - -ac
-            - >
-              mkdir -p /data/web3signer /data/keystore;
-              chown -R {{ .Values.podSecurityContext.runAsUser }}:{{ .Values.podSecurityContext.fsGroup }} /data/web3signer
-          volumeMounts:
-            - name: data
-              mountPath: /data
-        - name: fetch-keys
-          image: "{{ .Values.cliImage.registry }}/{{ .Values.cliImage.repository }}:{{ .Values.cliImage.tag }}"
-          imagePullPolicy: {{ .Values.cliImage.pullPolicy }}
-          securityContext:
-            runAsUser: 0
-          envFrom:
-            - secretRef:
-                name: {{ include "common.names.fullname" . }}
-          args: ["sync-web3signer-keys", "--db-url", "{{ .Values.dbKeystoreUrl }}", "--output-dir", "/data/keystore"]
-          volumeMounts:
-            - name: data
-              mountPath: /data
-        - name: copy-migrations
-          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          command:
-            - sh
-            - -ac
-            - cp -v /opt/web3signer/migrations/postgresql/* /migrations/
-          volumeMounts:
-            - name: migrations
-              mountPath: /migrations
-        - name: migrations
-          image: "{{ .Values.flywayImage.registry }}/{{ .Values.flywayImage.repository }}:{{ .Values.flywayImage.tag }}"
-          imagePullPolicy: {{ .Values.flywayImage.pullPolicy }}
-          securityContext:
-            runAsUser: 0
-          args:
-            - -user={{ .Values.dbUsername }}
-            - -password={{ .Values.dbPassword }}
-            - -url={{ .Values.dbUrl }}
-            - -locations=filesystem:/migrations
-            - migrate
-          volumeMounts:
-            - name: migrations
-              mountPath: /migrations
+        {{- $root := $ }}
+        {{- range .Values.initContainers }}
+        {{- include "web3signer.initContainer" (dict "root" $root "container" .) | nindent 8 }}
+        {{- end }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.command }}
+          command:
+            {{- toYaml .Values.command | nindent 12 }}
+          {{- end }}
+          {{- if or .Values.args .Values.extraFlags }}
           args:
-            - --config-file=/config/config.yaml
-            - eth2
-          {{- range .Values.extraFlags }}
-            - {{ . | quote }}
+            {{- toYaml .Values.args | nindent 12 }}
           {{- end }}
           env:
             - name: JAVA_OPTS

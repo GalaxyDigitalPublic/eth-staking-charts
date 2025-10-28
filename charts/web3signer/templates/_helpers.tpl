@@ -60,3 +60,89 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+
+{{/*
+Generic init container template
+Usage in template:
+{{ $root := $ }}
+{{ range .Values.initContainers }}
+{{ include "web3signer.initContainer" (dict "root" $root "container" .) | nindent 6 }}
+{{ end }}
+
+Container object structure:
+  name: string (required)
+  image: object/string (optional)
+    - If object: (defaults to main container image values)
+    - If object:
+      registry: string (optional)
+      repository: string (optional)
+      tag: string (optional)
+      pullPolicy: string (optional)
+    - If string: full image path
+  command: []string (optional - if not set, container's default ENTRYPOINT is used)
+  args: []string (optional - if args contain templates they will be rendered)
+  env: []object (optional - if templates they will be rendered)
+  envFrom: []object (optional - if templates they will be rendered)
+  securityContext: object (optional - defaults to main container securityContext)
+  resources: object (optional)
+  volumeMounts: []object (optional - if templates they will be rendered)
+  workingDir: string (optional)
+  ports: []object (optional - if templates they will be rendered)
+  restartPolicy: string (optional)
+*/}}
+{{- define "web3signer.initContainer" -}}
+{{- if not .container.name -}}
+  {{- fail "Init container name is required but not provided" -}}
+{{- end -}}
+{{- $mainImage := .root.Values.image -}}
+
+- name: {{ .container.name }}
+  {{- if .container.image }}
+  {{- if typeIs "string" .container.image }}
+  image: {{ .container.image }}
+  {{- else }}
+  image: "{{ .container.image.registry }}/{{ .container.image.repository }}:{{ .container.image.tag }}"
+  {{- end }}
+  imagePullPolicy: {{ .container.image.pullPolicy | default $mainImage.pullPolicy }}
+  {{- else }}
+  image: "{{ $mainImage.registry }}/{{ $mainImage.repository }}:{{ $mainImage.tag | default .root.Chart.AppVersion }}"
+  imagePullPolicy: {{ $mainImage.pullPolicy }}
+  {{- end }}
+  {{- if .container.command }}
+  command:
+    {{- toYaml .container.command | nindent 4 }}
+  {{- end }}
+  {{- if .container.args }}
+  args:
+    {{- (tpl (toYaml .container.args) .root) | nindent 2 }}
+  {{- end }}
+  {{- if .container.workingDir }}
+  workingDir: {{ .container.workingDir }}
+  {{- end }}
+  {{- if .container.env }}
+  env:
+    {{- (tpl (toYaml .container.env) .root) | nindent 2 }}
+  {{- end }}
+  {{- if .container.envFrom }}
+  envFrom:
+    {{- (tpl (toYaml .container.envFrom) .root) | nindent 4 }}
+  {{- end }}
+  {{- if .container.ports }}
+  ports:
+    {{- (tpl (toYaml .container.ports) .root) | nindent 4 }}
+  {{- end }}
+  securityContext:
+    {{- toYaml (.container.securityContext | default .root.Values.securityContext) | nindent 4 }}
+  {{- if .container.resources }}
+  resources:
+    {{- toYaml .container.resources | nindent 4 }}
+  {{- end }}
+  {{- if .container.volumeMounts }}
+  volumeMounts:
+    {{- tpl (toYaml .container.volumeMounts) .root | nindent 4 }}
+  {{- end }}
+  {{- if .container.restartPolicy }}
+  restartPolicy: {{ .container.restartPolicy }}
+  {{- end }}
+{{- end -}}
