@@ -20,8 +20,87 @@ image:
 dbKeystoreUrl: ""
 
 ## The key for decrypting private keys is generated with stakewise-cli sync-db command
+## Use this for plain text decryption key (legacy mode)
 ##
 decryptionKey: ""
+
+## Encrypted decryption key configuration
+## When enabled, the decryption key is stored encrypted and decrypted at runtime
+## via an init container using AWS KMS or Azure Key Vault.
+## The decrypted key is passed in-memory (never persisted to disk).
+##
+## This provides enhanced security because:
+##   1. The secret is encrypted at rest in Kubernetes secrets
+##   2. Decryption only happens at pod startup via cloud KMS
+##   3. The decrypted value is stored in a memory-backed volume (never on disk)
+##   4. If the pod restarts, the init container must run again to decrypt
+##
+## Prerequisites:
+##   For AWS (using IRSA - IAM Roles for Service Accounts):
+##     1. Create a KMS key and note the key ID/ARN/alias
+##     2. Encrypt your decryption key: aws kms encrypt --key-id <key-id> --plaintext "<your-key>" --output text --query CiphertextBlob
+##     3. Create an IAM role with kms:Decrypt permission for the key
+##     4. Associate the IAM role with the Kubernetes service account using IRSA
+##     5. Set serviceAccount.annotations with: eks.amazonaws.com/role-arn: <role-arn>
+##
+##   For Azure (using Managed Identity):
+##     1. Create a Key Vault and a key within it
+##     2. Encrypt your decryption key using the Azure CLI or SDK
+##     3. Configure Workload Identity or Pod Identity for your AKS cluster
+##     4. Grant the managed identity "Key Vault Crypto User" role on the key
+##     5. Configure pod identity annotations as needed for your setup
+##
+encryptedDecryptionKey:
+  ## Enable encrypted decryption key mode
+  ## When true, uses the encrypted ciphertext and decrypts at runtime
+  ## When false, uses the plain decryptionKey above (legacy behavior)
+  enabled: false
+
+  ## The encrypted (base64-encoded ciphertext) decryption key
+  ## For AWS KMS: This is the base64-encoded output from `aws kms encrypt`
+  ## For Azure: This is the base64-encoded output from key vault encryption
+  ciphertext: ""
+
+  ## Provider for decryption: "aws" or "azure"
+  provider: "aws"
+
+  ## AWS KMS Configuration (used when provider: "aws")
+  aws:
+    ## AWS region where the KMS key is located
+    region: "us-east-1"
+    ## The KMS key ID, alias, or ARN to use for decryption
+    ## Examples:
+    ##   - Key ID: "1234abcd-12ab-34cd-56ef-1234567890ab"
+    ##   - Alias: "alias/my-key"
+    ##   - ARN: "arn:aws:kms:us-east-1:123456789012:key/..."
+    keyId: ""
+    ## Optional: Role ARN to assume for cross-account access
+    roleArn: ""
+
+  ## Azure Key Vault Configuration (used when provider: "azure")
+  azure:
+    ## Azure Key Vault name (the vault URL will be https://<vaultName>.vault.azure.net)
+    vaultName: ""
+    ## The name of the key in the vault
+    keyName: ""
+    ## Optional: Specific version of the key (latest if empty)
+    keyVersion: ""
+    ## The encryption algorithm used (RSA-OAEP, RSA-OAEP-256, etc.)
+    algorithm: "RSA-OAEP-256"
+    ## Optional: Managed Identity Client ID (required when multiple identities exist on the pod)
+    clientId: ""
+
+  ## Images for the decryption init container (selected automatically based on provider)
+  awsImage:
+    registry: "docker.io"
+    repository: "amazon/aws-cli"
+    tag: "latest"
+    pullPolicy: Always
+  azureImage:
+    registry: "mcr.microsoft.com"
+    repository: "azure-cli"
+    tag: "latest"
+    pullPolicy: Always
 
 ## Flyawy image is used to apply database migrations
 ##
@@ -75,8 +154,33 @@ dbUrl: "jdbc:postgresql://localhost/web3signer"
 dbUsername: ""
 
 ## The password to connect to the slashing protection database.
+## Use dbPassword for plain text (not recommended) or existingSecrets for production.
 ##
 dbPassword: ""
+
+## Use existing Kubernetes secrets instead of passing values directly.
+## This is the recommended approach for production deployments.
+## When set, the corresponding plain text values above are ignored.
+##
+existingSecrets:
+  ## Database password secret
+  dbPassword:
+    ## Name of existing secret containing the database password
+    name: ""
+    ## Key within the secret
+    key: "password"
+  ## Decryption key secret (for decrypting validator keys from keystore DB)
+  decryptionKey:
+    ## Name of existing secret containing the decryption key
+    name: ""
+    ## Key within the secret
+    key: "decryptionKey"
+  ## Keystore database URL secret (postgresql://user:pass@host/db format)
+  dbKeystoreUrl:
+    ## Name of existing secret containing the full keystore DB URL
+    name: ""
+    ## Key within the secret
+    key: "dbKeystoreUrl"
 
 ## Port on which Web3Signer HTTP listens.
 ##
@@ -116,6 +220,9 @@ serviceAccount:
   name: ""
 
 podAnnotations: {}
+
+## Pod labels to add
+podLabels: {}
 
 ## Pod Security Context
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
@@ -207,6 +314,13 @@ serviceMonitor:
 # Some values in the init containers can be templated using Helm templating.
 # See the _helpers.tpl, `web3signer.initContainer` template and look for `tpl`
 # to know which fields support templating.
+#
+# Special field: usesDecryptedSecret
+# When encryptedDecryptionKey.enabled=true, containers with usesDecryptedSecret=true will:
+#   1. Have their command/args wrapped to source DECRYPTION_KEY from /decrypted-secrets/DECRYPTION_KEY
+#   2. Automatically mount the decrypted-secrets volume
+#   3. Skip the envFrom (since the key comes from file instead)
+# This allows containers like fetch-keys to transparently work with both plain text and encrypted modes.
 
 initContainers:
   # Initialize data directories and set proper ownership
@@ -229,14 +343,24 @@ initContainers:
         mountPath: /data
 
   # Fetch validator keys from database
+  # When encryptedDecryptionKey.enabled=true, this container will:
+  #   - Use a shell wrapper to source DECRYPTION_KEY from /decrypted-secrets/DECRYPTION_KEY
+  #   - Mount the decrypted-secrets volume (automatically added by the template)
+  # When encryptedDecryptionKey.enabled=false (default):
+  #   - Uses DECRYPTION_KEY from the secret via envFrom (legacy behavior)
   - name: fetch-keys
+    # Mark this container as needing the decrypted secret
+    usesDecryptedSecret: true
     image:
       registry: "ghcr.io"
       repository: "galaxydigitalpublic/sync-keys"
       tag: "v0.3.2"
       pullPolicy: Always
-    securityContext:
-      runAsUser: 0
+    # Uses pod's default securityContext (runAsUser: 1000)
+    workingDir: /src
+    command:
+      - python
+      - ./main.py
     args:
       - sync-web3signer-keys
       - --db-url

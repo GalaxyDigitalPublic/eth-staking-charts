@@ -91,11 +91,118 @@ Container object structure:
   ports: []object (optional - if templates they will be rendered)
   restartPolicy: string (optional)
 */}}
+{{/*
+Decrypt secret init container template
+This container decrypts the ENCRYPTED_DECRYPTION_KEY using AWS KMS or Azure Key Vault
+and writes the decrypted value to /decrypted-secrets/DECRYPTION_KEY
+
+AWS: Uses IRSA (IAM Roles for Service Accounts) - credentials are automatically
+     provided via the service account's projected token. Ensure your service account
+     is annotated with the appropriate IAM role ARN.
+
+Azure: Uses Managed Identity (Workload Identity or Pod Identity) - requires
+       az login --identity to authenticate before accessing Key Vault.
+*/}}
+{{- define "web3signer.decryptSecretInitContainer" -}}
+{{- $provider := .Values.encryptedDecryptionKey.provider -}}
+- name: decrypt-secret
+  {{- if eq $provider "aws" }}
+  image: "{{ .Values.encryptedDecryptionKey.awsImage.registry }}/{{ .Values.encryptedDecryptionKey.awsImage.repository }}:{{ .Values.encryptedDecryptionKey.awsImage.tag }}"
+  imagePullPolicy: {{ .Values.encryptedDecryptionKey.awsImage.pullPolicy }}
+  {{- else if eq $provider "azure" }}
+  image: "{{ .Values.encryptedDecryptionKey.azureImage.registry }}/{{ .Values.encryptedDecryptionKey.azureImage.repository }}:{{ .Values.encryptedDecryptionKey.azureImage.tag }}"
+  imagePullPolicy: {{ .Values.encryptedDecryptionKey.azureImage.pullPolicy }}
+  {{- end }}
+  command:
+    - /bin/sh
+    - -c
+    - |
+      set -e
+      {{- if eq $provider "aws" }}
+      echo "Decrypting secret using AWS KMS (via IRSA)..."
+      # AWS credentials are provided automatically via IRSA
+      # The service account must be annotated with: eks.amazonaws.com/role-arn: <IAM_ROLE_ARN>
+      # and the IAM role must have kms:Decrypt permission for the specified key
+      {{- if .Values.encryptedDecryptionKey.aws.roleArn }}
+      # Assume role for cross-account access (if needed beyond IRSA)
+      echo "Assuming role: $AWS_ROLE_ARN"
+      CREDS=$(aws sts assume-role --role-arn "$AWS_ROLE_ARN" --role-session-name decrypt-session --output json)
+      export AWS_ACCESS_KEY_ID=$(echo $CREDS | sed -n 's/.*"AccessKeyId": "\([^"]*\)".*/\1/p')
+      export AWS_SECRET_ACCESS_KEY=$(echo $CREDS | sed -n 's/.*"SecretAccessKey": "\([^"]*\)".*/\1/p')
+      export AWS_SESSION_TOKEN=$(echo $CREDS | sed -n 's/.*"SessionToken": "\([^"]*\)".*/\1/p')
+      {{- end }}
+      # Decode base64 ciphertext and decrypt with KMS
+      echo "$ENCRYPTED_DECRYPTION_KEY" | base64 -d > /tmp/ciphertext.bin
+      DECRYPTED=$(aws kms decrypt \
+        --region "$AWS_REGION" \
+        --ciphertext-blob fileb:///tmp/ciphertext.bin \
+        --output text \
+        --query Plaintext | base64 -d)
+      rm -f /tmp/ciphertext.bin
+      {{- else if eq $provider "azure" }}
+      echo "Decrypting secret using Azure Key Vault (via Workload Identity)..."
+      # Login using Azure Workload Identity with federated token
+      if [ -f "$AZURE_FEDERATED_TOKEN_FILE" ]; then
+        echo "Using federated token for authentication..."
+        az login --federated-token "$(cat $AZURE_FEDERATED_TOKEN_FILE)" \
+          --service-principal \
+          -u "$AZURE_CLIENT_ID" \
+          -t "$AZURE_TENANT_ID" \
+          --allow-no-subscriptions
+      else
+        echo "Federated token not found, falling back to managed identity..."
+        {{- if .Values.encryptedDecryptionKey.azure.clientId }}
+        az login --identity --allow-no-subscriptions --client-id "$AZURE_CLIENT_ID"
+        {{- else }}
+        az login --identity --allow-no-subscriptions
+        {{- end }}
+      fi
+      echo "Logged in to Azure, decrypting secret..."
+      # Azure Key Vault uses base64url encoding (URL-safe base64)
+      # Step 1: Remove any whitespace/newlines that may have been introduced
+      CIPHERTEXT=$(echo "$ENCRYPTED_DECRYPTION_KEY" | tr -d '[:space:]')
+      # Step 2: Convert URL-safe base64 to standard base64
+      # Replace - with + and _ with /
+      CIPHERTEXT=$(echo "$CIPHERTEXT" | tr '_-' '/+')
+      # Step 3: Add padding if needed (base64 strings must be multiple of 4 chars)
+      case $((${#CIPHERTEXT} % 4)) in
+        2) CIPHERTEXT="${CIPHERTEXT}==" ;;
+        3) CIPHERTEXT="${CIPHERTEXT}=" ;;
+      esac
+      echo "Ciphertext length: ${#CIPHERTEXT} (after conversion)"
+      # Decrypt the ciphertext using Azure Key Vault
+      DECRYPTED=$(az keyvault key decrypt \
+        --name "$AZURE_KEY_NAME" \
+        --vault-name "$AZURE_VAULT_NAME" \
+        --algorithm "$AZURE_ALGORITHM" \
+        --value "$CIPHERTEXT" \
+        {{- if .Values.encryptedDecryptionKey.azure.keyVersion }}
+        --version "$AZURE_KEY_VERSION" \
+        {{- end }}
+        --query result --output tsv | base64 -d)
+      {{- end }}
+      # Write decrypted value to shared volume (memory-backed, not persisted)
+      # File is owned by user 1000 so non-root containers can read it
+      echo -n "$DECRYPTED" > /decrypted-secrets/DECRYPTION_KEY
+      chmod 400 /decrypted-secrets/DECRYPTION_KEY
+      chown 1000:1000 /decrypted-secrets/DECRYPTION_KEY
+      echo "Secret decryption completed successfully"
+  envFrom:
+    - secretRef:
+        name: {{ include "common.names.fullname" . }}
+  securityContext:
+    runAsUser: 0
+  volumeMounts:
+    - name: decrypted-secrets
+      mountPath: /decrypted-secrets
+{{- end -}}
+
 {{- define "web3signer.initContainer" -}}
 {{- if not .container.name -}}
   {{- fail "Init container name is required but not provided" -}}
 {{- end -}}
 {{- $mainImage := .root.Values.image -}}
+{{- $useEncryptedSecret := and .root.Values.encryptedDecryptionKey.enabled .container.usesDecryptedSecret -}}
 
 - name: {{ .container.name }}
   {{- if .container.image }}
@@ -109,13 +216,35 @@ Container object structure:
   image: "{{ $mainImage.registry }}/{{ $mainImage.repository }}:{{ $mainImage.tag | default .root.Chart.AppVersion }}"
   imagePullPolicy: {{ $mainImage.pullPolicy }}
   {{- end }}
+  {{- /* When using encrypted secret, wrap the original command/args to source the key from file */ -}}
+  {{- if $useEncryptedSecret }}
+  {{- $renderedArgs := list }}
+  {{- range .container.args }}
+  {{- $renderedArgs = append $renderedArgs (tpl . $.root) }}
+  {{- end }}
+  command:
+    - /bin/sh
+    - -c
+    - |
+      set -e
+      export DECRYPTION_KEY=$(cat /decrypted-secrets/DECRYPTION_KEY)
+      {{- if .container.command }}
+      exec {{ range .container.command }}{{ tpl . $.root | quote }} {{ end }}{{ range $renderedArgs }}{{ . | quote }} {{ end }}
+      {{- else if .container.args }}
+      exec {{ range $renderedArgs }}{{ . | quote }} {{ end }}
+      {{- else }}
+      echo "Error: No command or args specified for container with usesDecryptedSecret"
+      exit 1
+      {{- end }}
+  {{- else }}
   {{- if .container.command }}
   command:
-    {{- toYaml .container.command | nindent 4 }}
+    {{- (tpl (toYaml .container.command) .root) | nindent 4 }}
   {{- end }}
   {{- if .container.args }}
   args:
     {{- (tpl (toYaml .container.args) .root) | nindent 2 }}
+  {{- end }}
   {{- end }}
   {{- if .container.workingDir }}
   workingDir: {{ .container.workingDir }}
@@ -124,7 +253,8 @@ Container object structure:
   env:
     {{- (tpl (toYaml .container.env) .root) | nindent 2 }}
   {{- end }}
-  {{- if .container.envFrom }}
+  {{- /* Skip envFrom when using encrypted secret (key comes from file instead) */ -}}
+  {{- if and .container.envFrom (not $useEncryptedSecret) }}
   envFrom:
     {{- (tpl (toYaml .container.envFrom) .root) | nindent 4 }}
   {{- end }}
@@ -138,9 +268,15 @@ Container object structure:
   resources:
     {{- toYaml .container.resources | nindent 4 }}
   {{- end }}
-  {{- if .container.volumeMounts }}
   volumeMounts:
+  {{- if .container.volumeMounts }}
     {{- tpl (toYaml .container.volumeMounts) .root | nindent 4 }}
+  {{- end }}
+  {{- /* Add decrypted-secrets volume mount when using encrypted secret */ -}}
+  {{- if $useEncryptedSecret }}
+    - name: decrypted-secrets
+      mountPath: /decrypted-secrets
+      readOnly: true
   {{- end }}
   {{- if .container.restartPolicy }}
   restartPolicy: {{ .container.restartPolicy }}
