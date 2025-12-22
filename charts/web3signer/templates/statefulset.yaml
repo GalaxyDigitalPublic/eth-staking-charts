@@ -18,6 +18,9 @@ spec:
       {{- end }}
       labels:
         {{- include "common.labels.matchLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- with .Values.nodeSelector }}
       nodeSelector:
@@ -38,8 +41,12 @@ spec:
       serviceAccountName: {{ include "web3signer.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      {{- if .Values.initContainers }}
+      {{- if or .Values.initContainers .Values.encryptedDecryptionKey.enabled }}
       initContainers:
+        {{- /* Inject decrypt-secret container first when encrypted mode is enabled */ -}}
+        {{- if .Values.encryptedDecryptionKey.enabled }}
+        {{- include "web3signer.decryptSecretInitContainer" . | nindent 8 }}
+        {{- end }}
         {{- $root := $ }}
         {{- range .Values.initContainers }}
         {{- include "web3signer.initContainer" (dict "root" $root "container" .) | nindent 8 }}
@@ -104,3 +111,9 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 128Mi
+        {{- if .Values.encryptedDecryptionKey.enabled }}
+        - name: decrypted-secrets
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+        {{- end }}
