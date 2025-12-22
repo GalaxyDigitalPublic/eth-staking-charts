@@ -1,0 +1,35 @@
+{{- if .Values.certificate.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "web3signer.fullname" . }}-server
+  labels:
+    {{- include "web3signer.labels" . | nindent 4 }}
+spec:
+  secretName: {{ .Values.certificate.secretName }}
+  duration: {{ .Values.certificate.duration | default "8760h" }}
+  renewBefore: {{ .Values.certificate.renewBefore | default "720h" }}
+  subject:
+    organizations:
+      - {{ .Values.certificate.organization | default "Galaxy" }}
+  commonName: {{ include "web3signer.fullname" . }}
+  privateKey:
+    algorithm: {{ .Values.certificate.privateKey.algorithm | default "ECDSA" }}
+    size: {{ .Values.certificate.privateKey.size | default 256 }}
+  usages:
+    - server auth
+    - digital signature
+    - key encipherment
+  dnsNames:
+    {{- if .Values.certificate.dnsNames }}
+    {{- toYaml .Values.certificate.dnsNames | nindent 4 }}
+    {{- else }}
+    - {{ include "web3signer.fullname" . }}
+    - {{ include "web3signer.fullname" . }}.{{ .Release.Namespace }}
+    - {{ include "web3signer.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+    {{- end }}
+  issuerRef:
+    name: {{ .Values.certificate.issuerRef.name }}
+    kind: {{ .Values.certificate.issuerRef.kind }}
+    group: cert-manager.io
+{{- end }}

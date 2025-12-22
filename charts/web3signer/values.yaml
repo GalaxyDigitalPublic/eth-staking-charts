@@ -303,6 +303,89 @@ serviceMonitor:
   ##
   additionalLabels: {}
 
+## Ingress configuration
+## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/
+##
+ingress:
+  ## Enable ingress resource
+  enabled: false
+
+  ## Ingress class name (e.g., "nginx", "azure-application-gateway")
+  className: "nginx"
+
+  ## Additional annotations for the ingress resource
+  annotations: {}
+
+  ## Request timeout in seconds (for NGINX ingress)
+  requestTimeout: "60"
+
+  ## Ingress hosts configuration
+  hosts:
+    - host: web3signer.internal
+      paths:
+        - path: /
+          pathType: Prefix
+
+  ## TLS configuration for HTTPS
+  ## Each entry should have hosts (list) and secretName
+  tls: []
+  # - hosts:
+  #     - web3signer.internal
+  #   secretName: web3signer-server-tls
+
+  ## mTLS configuration for client certificate verification
+  ## Only supported with NGINX ingress controller
+  mtls:
+    ## Enable mTLS client certificate verification
+    enabled: false
+
+    ## CA secret for verifying client certificates
+    ## Format: "namespace/secret-name"
+    caSecret: "cert-manager/mtls-ca-secret"
+
+    ## Client verification mode:
+    ## - "on": require valid client certificate
+    ## - "optional": request but don't require client certificate
+    ## - "optional_no_ca": request certificate but don't verify against CA
+    verifyClient: "on"
+
+    ## Certificate chain verification depth
+    verifyDepth: "1"
+
+## Certificate configuration (requires cert-manager)
+## Creates a Certificate resource for server TLS
+##
+certificate:
+  ## Enable automatic certificate generation via cert-manager
+  enabled: false
+
+  ## Name of the Kubernetes secret to store the certificate
+  secretName: "web3signer-server-tls"
+
+  ## Certificate duration (default: 1 year)
+  duration: "8760h"
+
+  ## Time before expiry to renew (default: 30 days)
+  renewBefore: "720h"
+
+  ## Organization name in the certificate subject
+  organization: "Galaxy"
+
+  ## DNS names to include in the certificate
+  ## If empty, defaults to service name variants
+  dnsNames: []
+  # - web3signer.internal.example.com
+
+  ## Private key configuration
+  privateKey:
+    algorithm: "ECDSA"
+    size: 256
+
+  ## Reference to the cert-manager issuer
+  issuerRef:
+    name: "mtls-ca-issuer"
+    kind: "ClusterIssuer"
+
 # A Note about Init Containers:
 # The init containers are used to prepare the environment before the main web3signer container starts.
 # The default init containers handle common tasks such as initializing data directories, fetching keys from a database, copying migration files, and running database migrations.
