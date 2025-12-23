@@ -49,6 +49,48 @@ spec:
       serviceAccountName: "validators"
       priorityClassName: {{ $root.Values.priorityClassName | quote }}
       initContainers:
+        {{- if $root.Values.web3signerTls.enabled }}
+        # Convert PEM certificates to PKCS#12 format for Lighthouse
+        - name: convert-certs-p12
+          image: "{{ $root.Values.web3signerTls.opensslImage.registry }}/{{ $root.Values.web3signerTls.opensslImage.repository }}:{{ $root.Values.web3signerTls.opensslImage.tag }}"
+          imagePullPolicy: {{ $root.Values.web3signerTls.opensslImage.pullPolicy }}
+          securityContext:
+            runAsUser: 0
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              echo "Converting PEM certificates to PKCS#12 format..."
+              # Convert PEM cert+key to PKCS#12
+              openssl pkcs12 -export \
+                -in /certs-pem/tls.crt \
+                -inkey /certs-pem/tls.key \
+                -out /tls/client.p12 \
+                -passout pass:${P12_PASSWORD} \
+                -name "web3signer-client"
+              # Copy CA cert
+              cp /certs-pem/ca.crt /tls/ca.crt
+              # Write password to file for Lighthouse
+              echo -n "${P12_PASSWORD}" > /tls/client.password
+              # Set permissions
+              chmod 644 /tls/*
+              chown {{ $root.Values.securityContext.runAsUser }}:{{ $root.Values.securityContext.runAsUser }} /tls/*
+              echo "Certificate conversion complete"
+              ls -la /tls/
+          env:
+            - name: P12_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $root.Values.web3signerTls.p12PasswordSecret.name }}
+                  key: {{ $root.Values.web3signerTls.p12PasswordSecret.key }}
+          volumeMounts:
+            - name: tls-certs-pem
+              mountPath: /certs-pem
+              readOnly: true
+            - name: tls-certs
+              mountPath: /tls
+        {{- end }}
         - name: get-configs
           image: "{{ $root.Values.cliImage.registry }}/{{ $root.Values.cliImage.repository }}:{{ $root.Values.cliImage.tag }}"
           imagePullPolicy: {{ $root.Values.cliImage.pullPolicy }}
@@ -68,6 +110,30 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+        {{- if $root.Values.web3signerTls.enabled }}
+        # Inject TLS configuration into validator_definitions.yml for Lighthouse
+        - name: inject-tls-config
+          image: "{{ $root.Values.web3signerTls.yqImage.registry }}/{{ $root.Values.web3signerTls.yqImage.repository }}:{{ $root.Values.web3signerTls.yqImage.tag }}"
+          imagePullPolicy: {{ $root.Values.web3signerTls.yqImage.pullPolicy }}
+          securityContext:
+            runAsUser: 0
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              echo "Injecting TLS configuration into validator_definitions.yml..."
+              yq -i '(.[] | select(.type == "web3signer")) += {
+                "root_certificate_path": "{{ $root.Values.web3signerTls.rootCertificatePath }}",
+                "client_identity_path": "{{ $root.Values.web3signerTls.clientIdentityPath }}",
+                "client_identity_password_path": "{{ $root.Values.web3signerTls.clientIdentityPasswordPath }}"
+              }' /data/validator_definitions.yml
+              echo "TLS configuration injected:"
+              cat /data/validator_definitions.yml
+          volumeMounts:
+            - name: data
+              mountPath: /data
+        {{- end }}
         - name: prepare
           image: "{{ $root.Values.initImageBusybox.registry }}/{{ $root.Values.initImageBusybox.repository }}:{{ $root.Values.initImageBusybox.tag }}"
           imagePullPolicy: {{ $root.Values.initImageBusybox.pullPolicy }}
@@ -162,6 +228,11 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+          {{- if $root.Values.web3signerTls.enabled }}
+            - name: tls-certs
+              mountPath: /tls
+              readOnly: true
+          {{- end }}
           {{- if and $root.Values.keyManagerApi.enabled $root.Values.keyManagerApi.tokenSecret.name }}
             {{- if eq $root.Values.type "prysm" }}
             - name: apitoken
@@ -183,6 +254,13 @@ spec:
       volumes:
         - name: data
           emptyDir: {}
+        {{- if $root.Values.web3signerTls.enabled }}
+        - name: tls-certs-pem
+          secret:
+            secretName: {{ $root.Values.web3signerTls.pemSecret.name }}
+        - name: tls-certs
+          emptyDir: {}
+        {{- end }}
         {{- if and $root.Values.keyManagerApi.enabled $root.Values.keyManagerApi.tokenSecret.name }}
         - name: apitoken
           secret:

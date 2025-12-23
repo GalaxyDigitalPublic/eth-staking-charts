@@ -216,6 +216,43 @@ extraFlags:
 ##
 web3signerEndpoint: http://web3signer:6174
 
+## Web3Signer TLS Configuration
+## For mTLS communication with remote web3signer over HTTPS
+##
+web3signerTls:
+  ## Enable TLS for web3signer connection
+  ## When enabled, certificates are mounted and sync-keys generates TLS config
+  enabled: false
+
+  ## Paths where certs are mounted in VC container (after P12 conversion)
+  rootCertificatePath: "/tls/ca.crt"
+  clientIdentityPath: "/tls/client.p12"
+  clientIdentityPasswordPath: "/tls/client.password"
+
+  ## Secret containing PEM format certs (ca.crt, tls.crt, tls.key)
+  ## This secret is typically created via External Secrets from AWS Secrets Manager
+  pemSecret:
+    name: "web3signer-mtls-client-pem"
+
+  ## Secret containing P12 password (created manually or via terraform)
+  p12PasswordSecret:
+    name: "web3signer-mtls-p12-password"
+    key: "password"
+
+  ## Image for P12 conversion init container
+  opensslImage:
+    registry: "docker.io"
+    repository: "alpine/openssl"
+    tag: "latest"
+    pullPolicy: Always
+
+  ## Image for injecting TLS config into validator_definitions.yml
+  yqImage:
+    registry: "docker.io"
+    repository: "mikefarah/yq"
+    tag: "latest"
+    pullPolicy: Always
+
 ## List of Beacon Chain node addresses
 ##
 beaconChainRpcEndpoints: []
