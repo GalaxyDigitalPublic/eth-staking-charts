@@ -437,7 +437,7 @@ initContainers:
     image:
       registry: "ghcr.io"
       repository: "galaxydigitalpublic/sync-keys"
-      tag: "v0.3.2"
+      tag: "0.4.0"
       pullPolicy: Always
     # Uses pod's default securityContext (runAsUser: 1000)
     workingDir: /src
