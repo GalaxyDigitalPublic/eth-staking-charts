@@ -158,18 +158,14 @@ Azure: Uses Managed Identity (Workload Identity or Pod Identity) - requires
         {{- end }}
       fi
       echo "Logged in to Azure, decrypting secret..."
-      # Azure Key Vault uses base64url encoding (URL-safe base64)
-      # Step 1: Remove any whitespace/newlines that may have been introduced
+      # Remove any whitespace/newlines that may have been introduced
       CIPHERTEXT=$(echo "$ENCRYPTED_DECRYPTION_KEY" | tr -d '[:space:]')
-      # Step 2: Convert URL-safe base64 to standard base64
-      # Replace - with + and _ with /
-      CIPHERTEXT=$(echo "$CIPHERTEXT" | tr '_-' '/+')
-      # Step 3: Add padding if needed (base64 strings must be multiple of 4 chars)
+      # Add padding if needed (base64 strings must be multiple of 4 chars)
       case $((${#CIPHERTEXT} % 4)) in
         2) CIPHERTEXT="${CIPHERTEXT}==" ;;
         3) CIPHERTEXT="${CIPHERTEXT}=" ;;
       esac
-      echo "Ciphertext length: ${#CIPHERTEXT} (after conversion)"
+      echo "Ciphertext length: ${#CIPHERTEXT}"
       # Decrypt the ciphertext using Azure Key Vault
       DECRYPTED=$(az keyvault key decrypt \
         --name "$AZURE_KEY_NAME" \
