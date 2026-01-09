@@ -107,6 +107,10 @@ spec:
             - "/data"
             - "--default-recipient"
             - "{{ $root.Values.suggestedFeeRecipient }}"
+            {{- if $root.Values.dbKeystoreTableName }}
+            - "--table-name"
+            - "{{ $root.Values.dbKeystoreTableName }}"
+            {{- end }}
           volumeMounts:
             - name: data
               mountPath: /data
