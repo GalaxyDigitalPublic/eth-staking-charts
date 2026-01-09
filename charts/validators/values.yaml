@@ -47,6 +47,11 @@ cliImage:
 ##
 dbKeystoreUrl: ""
 
+## Database table name for validator keys (sync-keys 0.4.0+)
+## Allows using different tables for different validator sets
+##
+dbKeystoreTableName: ""
+
 ## Configuration for validators
 ## ref: https://lighthouse-book.sigmaprime.io/validator-management.html
 ## ref: https://docs.prylabs.network/docs/getting-started
