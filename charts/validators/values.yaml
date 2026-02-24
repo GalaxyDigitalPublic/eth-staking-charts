@@ -74,7 +74,6 @@ validatorsCount: 0
 ##
 suggestedFeeRecipient: ""
 
-
 ## Validators image version
 ## ref: https://gcr.io/prysmaticlabs/prysm/validator
 ## ref: https://hub.docker.com/r/sigp/lighthouse
@@ -123,6 +122,39 @@ tolerations: {}
 ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
 ##
 affinity: {}
+
+## Topology spread constraints for pod assignment
+## ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+## ## !!Ensure labelSelector is set to match pod labels.
+## Example:
+## topologySpreadConstraints:
+## - maxSkew: 1
+##   topologyKey: kubernetes.io/hostname
+##   whenUnsatisfiable: ScheduleAnyway
+##   labelSelector:
+##     matchLabels:
+##       app.kubernetes.io/name: validators
+##       app.kubernetes.io/instance: validators
+
+# topologySpreadConstraints: []
+
+## Pod management policy for the StatefulSet
+## ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies
+## Options: OrderedReady (default), Parallel
+##
+
+# podManagementPolicy: OrderedReady
+
+## Update strategy for the StatefulSet
+## ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies
+## Set rollingUpdate.partition to limit updates to pods with an ordinal >= partition
+## (useful for canary/staged rollouts — pods below the partition are not updated)
+##
+
+# updateStrategy:
+#   type: RollingUpdate
+#   rollingUpdate:
+#     partition: 0
 
 ## used to assign priority to pods
 ## ref: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
@@ -178,9 +210,9 @@ keyManagerApi:
   # Secret that contains the API token.
   tokenSecret:
     name: "apitoken"
-  # Key containing the API auth token
+    # Key containing the API auth token
     publicKey: "token"
-  # Key containing the corresponding secret key - Lighthouse
+    # Key containing the corresponding secret key - Lighthouse
     privateKey: "secret"
   flags:
     prysm:
@@ -203,7 +235,6 @@ keyManagerApi:
 # TLS. Mandatory for Teku but I don't have the init code yet to create it. For now, keymanager on Teku will fail
 #      - "--validator-api-keystore-file=/var/lib/teku/teku-keyapi.keystore"
 #      - "--validator-api-keystore-password-file=/var/lib/teku/teku-keyapi.password"
-
 
 ## Validators extra flags
 ##

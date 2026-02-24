@@ -10,6 +10,13 @@ metadata:
     {{- include "validator.labels" $root | nindent 4 }}
 spec:
   replicas: {{ $root.Values.validatorsCount }}
+  {{- with .Values.podManagementPolicy }}
+  podManagementPolicy: {{ . }}
+  {{- end }}
+  {{- with .Values.updateStrategy }}
+  updateStrategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "validators.selectorLabels" $root | nindent 6 }}
@@ -41,6 +48,10 @@ spec:
       {{- with $root.Values.nodeSelector }}
       nodeSelector:
         {{ toYaml . | nindent 8 | trim }}
+      {{- end }}
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml .Values.topologySpreadConstraints | nindent 8 }}
       {{- end }}
       {{- with $root.Values.securityContext }}
       securityContext:
