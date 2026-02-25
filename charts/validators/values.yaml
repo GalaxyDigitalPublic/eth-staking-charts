@@ -258,7 +258,6 @@ web3signerTls:
   ## Paths where certs are mounted in VC container (after P12 conversion)
   rootCertificatePath: "/tls/ca.crt"
   clientIdentityPath: "/tls/client.p12"
-  clientIdentityPasswordPath: "/tls/client.password"
 
   ## Secret containing PEM format certs (ca.crt, tls.crt, tls.key)
   ## This secret is typically created via External Secrets from AWS Secrets Manager
