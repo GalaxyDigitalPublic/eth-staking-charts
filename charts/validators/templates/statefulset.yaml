@@ -134,16 +134,20 @@ spec:
             - |
               set -e
               echo "Injecting TLS configuration into validator_definitions.yml..."
+              export CLIENT_IDENTITY_PASSWORD=$(cat /tls/client.password)
               yq -i '(.[] | select(.type == "web3signer")) += {
                 "root_certificate_path": "{{ $root.Values.web3signerTls.rootCertificatePath }}",
                 "client_identity_path": "{{ $root.Values.web3signerTls.clientIdentityPath }}",
-                "client_identity_password_path": "{{ $root.Values.web3signerTls.clientIdentityPasswordPath }}"
+                "client_identity_password": env(CLIENT_IDENTITY_PASSWORD)
               }' /data/validator_definitions.yml
               echo "TLS configuration injected:"
               cat /data/validator_definitions.yml
           volumeMounts:
             - name: data
               mountPath: /data
+            - name: tls-certs
+              mountPath: /tls
+              readOnly: true
         {{- end }}
         - name: prepare
           image: "{{ $root.Values.initImageBusybox.registry }}/{{ $root.Values.initImageBusybox.repository }}:{{ $root.Values.initImageBusybox.tag }}"
