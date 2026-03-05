@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - 'charts/**'
+      - "charts/**"
 
 jobs:
   release-charts:
@@ -45,8 +45,8 @@ jobs:
       - name: Checkout gh-pages branch
         uses: actions/checkout@v4
         with:
-          ref: 'gh-pages'
-          path: 'gh-pages'
+          ref: "gh-pages"
+          path: "gh-pages"
 
       - name: Update Helm repo index
         run: |
@@ -61,4 +61,3 @@ jobs:
           git add .
           git commit -m "Publish Helm charts"
           git push origin gh-pages
-
