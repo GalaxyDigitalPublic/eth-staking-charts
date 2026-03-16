@@ -62,47 +62,7 @@ Create the name of the service account to use
 {{- end }}
 
 
-{{/*
-Generic init container template
-Usage in template:
-{{ $root := $ }}
-{{ range .Values.initContainers }}
-{{ include "web3signer.initContainer" (dict "root" $root "container" .) | nindent 6 }}
-{{ end }}
-
-Container object structure:
-  name: string (required)
-  image: object/string (optional)
-    - If object: (defaults to main container image values)
-    - If object:
-      registry: string (optional)
-      repository: string (optional)
-      tag: string (optional)
-      pullPolicy: string (optional)
-    - If string: full image path
-  command: []string (optional - if not set, container's default ENTRYPOINT is used)
-  args: []string (optional - if args contain templates they will be rendered)
-  env: []object (optional - if templates they will be rendered)
-  envFrom: []object (optional - if templates they will be rendered)
-  securityContext: object (optional - defaults to main container securityContext)
-  resources: object (optional)
-  volumeMounts: []object (optional - if templates they will be rendered)
-  workingDir: string (optional)
-  ports: []object (optional - if templates they will be rendered)
-  restartPolicy: string (optional)
-*/}}
-{{/*
-Decrypt secret init container template
-This container decrypts the ENCRYPTED_DECRYPTION_KEY using AWS KMS or Azure Key Vault
-and writes the decrypted value to /decrypted-secrets/DECRYPTION_KEY
-
-AWS: Uses IRSA (IAM Roles for Service Accounts) - credentials are automatically
-     provided via the service account's projected token. Ensure your service account
-     is annotated with the appropriate IAM role ARN.
-
-Azure: Uses Managed Identity (Workload Identity or Pod Identity) - requires
-       az login --identity to authenticate before accessing Key Vault.
-*/}}
+{{/* Decrypt secret init container — decrypts ENCRYPTED_DECRYPTION_KEY via AWS KMS or Azure KV */}}
 {{- define "web3signer.decryptSecretInitContainer" -}}
 {{- $provider := .Values.encryptedDecryptionKey.provider -}}
 - name: decrypt-secret
@@ -119,19 +79,14 @@ Azure: Uses Managed Identity (Workload Identity or Pod Identity) - requires
     - |
       set -e
       {{- if eq $provider "aws" }}
-      echo "Decrypting secret using AWS KMS (via IRSA)..."
-      # AWS credentials are provided automatically via IRSA
-      # The service account must be annotated with: eks.amazonaws.com/role-arn: <IAM_ROLE_ARN>
-      # and the IAM role must have kms:Decrypt permission for the specified key
+      echo "Decrypting secret using AWS KMS..."
       {{- if .Values.encryptedDecryptionKey.aws.roleArn }}
-      # Assume role for cross-account access (if needed beyond IRSA)
       echo "Assuming role: $AWS_ROLE_ARN"
       CREDS=$(aws sts assume-role --role-arn "$AWS_ROLE_ARN" --role-session-name decrypt-session --output json)
       export AWS_ACCESS_KEY_ID=$(echo $CREDS | sed -n 's/.*"AccessKeyId": "\([^"]*\)".*/\1/p')
       export AWS_SECRET_ACCESS_KEY=$(echo $CREDS | sed -n 's/.*"SecretAccessKey": "\([^"]*\)".*/\1/p')
       export AWS_SESSION_TOKEN=$(echo $CREDS | sed -n 's/.*"SessionToken": "\([^"]*\)".*/\1/p')
       {{- end }}
-      # Decode base64 ciphertext and decrypt with KMS
       echo "$ENCRYPTED_DECRYPTION_KEY" | base64 -d > /tmp/ciphertext.bin
       DECRYPTED=$(aws kms decrypt \
         --region "$AWS_REGION" \
@@ -140,33 +95,36 @@ Azure: Uses Managed Identity (Workload Identity or Pod Identity) - requires
         --query Plaintext | base64 -d)
       rm -f /tmp/ciphertext.bin
       {{- else if eq $provider "azure" }}
-      echo "Decrypting secret using Azure Key Vault (via Workload Identity)..."
-      # Login using Azure Workload Identity with federated token
+      echo "Decrypting secret using Azure Key Vault..."
       if [ -f "$AZURE_FEDERATED_TOKEN_FILE" ]; then
-        echo "Using federated token for authentication..."
         az login --federated-token "$(cat $AZURE_FEDERATED_TOKEN_FILE)" \
-          --service-principal \
-          -u "$AZURE_CLIENT_ID" \
-          -t "$AZURE_TENANT_ID" \
-          --allow-no-subscriptions
+          --service-principal -u "$AZURE_CLIENT_ID" -t "$AZURE_TENANT_ID" --allow-no-subscriptions
       else
-        echo "Federated token not found, falling back to managed identity..."
         {{- if .Values.encryptedDecryptionKey.azure.clientId }}
         az login --identity --allow-no-subscriptions --client-id "$AZURE_CLIENT_ID"
         {{- else }}
         az login --identity --allow-no-subscriptions
         {{- end }}
       fi
-      echo "Logged in to Azure, decrypting secret..."
-      # Remove any whitespace/newlines that may have been introduced
+      {{- if .Values.encryptedDecryptionKey.useKeyVaultSecrets }}
+      if ! command -v psql > /dev/null 2>&1; then
+        if command -v apk > /dev/null 2>&1; then apk add --no-cache postgresql16-client > /dev/null 2>&1
+        elif command -v tdnf > /dev/null 2>&1; then tdnf install -y postgresql-libs > /dev/null 2>&1
+        fi
+      fi
+      echo "Fetching secrets from Key Vault..."
+      DB_PASSWORD=$(az keyvault secret show --vault-name "$AZURE_VAULT_NAME" --name "$KV_SECRET_DB_PASSWORD" --query value -o tsv)
+      DB_KEYSTORE_URL=$(az keyvault secret show --vault-name "$AZURE_VAULT_NAME" --name "$KV_SECRET_DB_KEYSTORE_URL" --query value -o tsv)
+      echo "Querying ciphertext from KOS DB for client_cluster_id=$CLIENT_CLUSTER_ID"
+      CIPHERTEXT=$(psql "$DB_KEYSTORE_URL" -tA -c "SELECT encrypted_encryption_key FROM encrypted_encryption_keys WHERE client_cluster_id = '$CLIENT_CLUSTER_ID' AND status = 5 LIMIT 1")
+      [ -z "$CIPHERTEXT" ] && echo "ERROR: No encryption key found for client_cluster_id=$CLIENT_CLUSTER_ID" && exit 1
+      {{- else }}
       CIPHERTEXT=$(echo "$ENCRYPTED_DECRYPTION_KEY" | tr -d '[:space:]')
-      # Add padding if needed (base64 strings must be multiple of 4 chars)
-      case $((${#CIPHERTEXT} % 4)) in
-        2) CIPHERTEXT="${CIPHERTEXT}==" ;;
-        3) CIPHERTEXT="${CIPHERTEXT}=" ;;
-      esac
+      {{- end }}
+      # base64url -> standard base64 + padding
+      CIPHERTEXT=$(echo "$CIPHERTEXT" | tr '_-' '/+')
+      case $((${#CIPHERTEXT} % 4)) in 2) CIPHERTEXT="${CIPHERTEXT}==" ;; 3) CIPHERTEXT="${CIPHERTEXT}=" ;; esac
       echo "Ciphertext length: ${#CIPHERTEXT}"
-      # Decrypt the ciphertext using Azure Key Vault
       DECRYPTED=$(az keyvault key decrypt \
         --name "$AZURE_KEY_NAME" \
         --vault-name "$AZURE_VAULT_NAME" \
@@ -177,11 +135,13 @@ Azure: Uses Managed Identity (Workload Identity or Pod Identity) - requires
         {{- end }}
         --query result --output tsv | base64 -d)
       {{- end }}
-      # Write decrypted value to shared volume (memory-backed, not persisted)
-      # File is owned by user 1000 so non-root containers can read it
       echo -n "$DECRYPTED" > /decrypted-secrets/DECRYPTION_KEY
-      chmod 400 /decrypted-secrets/DECRYPTION_KEY
-      chown 1000:1000 /decrypted-secrets/DECRYPTION_KEY
+      {{- if and (eq $provider "azure") .Values.encryptedDecryptionKey.useKeyVaultSecrets }}
+      echo -n "$DB_PASSWORD" > /decrypted-secrets/DB_PASSWORD
+      echo -n "$DB_KEYSTORE_URL" > /decrypted-secrets/DB_KEYSTORE_URL
+      {{- end }}
+      chmod 400 /decrypted-secrets/*
+      chown 1000:1000 /decrypted-secrets/*
       echo "Secret decryption completed successfully"
   envFrom:
     - secretRef:
@@ -199,6 +159,7 @@ Azure: Uses Managed Identity (Workload Identity or Pod Identity) - requires
 {{- end -}}
 {{- $mainImage := .root.Values.image -}}
 {{- $useEncryptedSecret := and .root.Values.encryptedDecryptionKey.enabled .container.usesDecryptedSecret -}}
+{{- $useKeyVaultSecrets := and $useEncryptedSecret .root.Values.encryptedDecryptionKey.useKeyVaultSecrets -}}
 
 - name: {{ .container.name }}
   {{- if .container.image }}
@@ -212,7 +173,6 @@ Azure: Uses Managed Identity (Workload Identity or Pod Identity) - requires
   image: "{{ $mainImage.registry }}/{{ $mainImage.repository }}:{{ $mainImage.tag | default .root.Chart.AppVersion }}"
   imagePullPolicy: {{ $mainImage.pullPolicy }}
   {{- end }}
-  {{- /* When using encrypted secret, wrap the original command/args to source the key from file */ -}}
   {{- if $useEncryptedSecret }}
   {{- $renderedArgs := list }}
   {{- range .container.args }}
@@ -224,6 +184,10 @@ Azure: Uses Managed Identity (Workload Identity or Pod Identity) - requires
     - |
       set -e
       export DECRYPTION_KEY=$(cat /decrypted-secrets/DECRYPTION_KEY)
+      {{- if $useKeyVaultSecrets }}
+      export DB_PASSWORD=$(cat /decrypted-secrets/DB_PASSWORD)
+      export DB_KEYSTORE_URL=$(cat /decrypted-secrets/DB_KEYSTORE_URL)
+      {{- end }}
       {{- if .container.command }}
       exec {{ range .container.command }}{{ tpl . $.root | quote }} {{ end }}{{ range $renderedArgs }}{{ . | quote }} {{ end }}
       {{- else if .container.args }}
@@ -249,7 +213,6 @@ Azure: Uses Managed Identity (Workload Identity or Pod Identity) - requires
   env:
     {{- (tpl (toYaml .container.env) .root) | nindent 2 }}
   {{- end }}
-  {{- /* Skip envFrom when using encrypted secret (key comes from file instead) */ -}}
   {{- if and .container.envFrom (not $useEncryptedSecret) }}
   envFrom:
     {{- (tpl (toYaml .container.envFrom) .root) | nindent 4 }}
@@ -268,7 +231,6 @@ Azure: Uses Managed Identity (Workload Identity or Pod Identity) - requires
   {{- if .container.volumeMounts }}
     {{- tpl (toYaml .container.volumeMounts) .root | nindent 4 }}
   {{- end }}
-  {{- /* Add decrypted-secrets volume mount when using encrypted secret */ -}}
   {{- if $useEncryptedSecret }}
     - name: decrypted-secrets
       mountPath: /decrypted-secrets
