@@ -69,6 +69,17 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if and .Values.encryptedDecryptionKey.enabled .Values.encryptedDecryptionKey.useKeyVaultSecrets }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              export WEB3SIGNER_ETH2_SLASHING_PROTECTION_DB_PASSWORD=$(cat /decrypted-secrets/DB_PASSWORD)
+              exec /opt/web3signer/bin/web3signer "$@"
+            - --
+          args:
+            {{- toYaml .Values.args | nindent 12 }}
+          {{- else }}
           {{- if .Values.command }}
           command:
             {{- toYaml .Values.command | nindent 12 }}
@@ -76,6 +87,7 @@ spec:
           {{- if or .Values.args .Values.extraFlags }}
           args:
             {{- toYaml .Values.args | nindent 12 }}
+          {{- end }}
           {{- end }}
           env:
             - name: JAVA_OPTS
@@ -112,6 +124,11 @@ spec:
               mountPath: /data
             - name: config
               mountPath: /config
+            {{- if and .Values.encryptedDecryptionKey.enabled .Values.encryptedDecryptionKey.useKeyVaultSecrets }}
+            - name: decrypted-secrets
+              mountPath: /decrypted-secrets
+              readOnly: true
+            {{- end }}
       volumes:
         - name: config
           secret:

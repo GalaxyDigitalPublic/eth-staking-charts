@@ -151,29 +151,76 @@ serviceAccount:
     azure.workload.identity/client-id: "your-managed-identity-client-id"
 ```
 
-### How It Works
+### Azure Key Vault Secrets Mode (`useKeyVaultSecrets`)
 
-When `encryptedDecryptionKey.enabled=true`:
+Eliminates **all** sensitive data from K8s secrets. Instead of storing the ciphertext in K8s, it is queried directly from the KOS database. DB password and keystore URL are fetched from KV secrets at runtime.
+
+#### Prerequisites
+
+1. **Azure Key Vault secrets** — store the DB password and keystore URL as secrets in your vault:
+   ```bash
+   az keyvault secret set --vault-name my-keyvault --name w3s-db-password --value "your-db-password"
+   az keyvault secret set --vault-name my-keyvault --name w3s-db-keystore-url --value "postgresql://user:pass@host/db"
+   ```
+2. **Database permissions** — the DB user needs SELECT on the ciphertext table:
+   ```sql
+   GRANT SELECT ON TABLE encrypted_encryption_keys TO your_db_user;
+   ```
+3. **Workload Identity** — the managed identity needs both:
+   - `Key Vault Crypto User` (for key decrypt)
+   - `Key Vault Secrets User` (for secret read)
+
+#### Configuration
+
+```yaml
+encryptedDecryptionKey:
+  enabled: true
+  provider: "azure"
+  useKeyVaultSecrets: true
+  clientClusterId: "your-client-cluster-id"
+  keyVaultSecrets:
+    dbPassword: "w3s-db-password"
+    dbKeystoreUrl: "w3s-db-keystore-url"
+  azure:
+    vaultName: "my-keyvault"
+    keyName: "kos-encryption-key"
+    algorithm: "RSA-OAEP-256"
+    clientId: "your-managed-identity-client-id"
+
+# Shell variables — expanded at runtime by the init container wrapper
+dbKeystoreUrl: "$DB_KEYSTORE_URL"
+dbPassword: "$DB_PASSWORD"
+```
+
+#### How It Works
+
+```
+Pod Startup Flow (useKeyVaultSecrets):
+
+  decrypt-secret init container:
+    1. az login (Workload Identity)
+    2. Fetch DB password from KV
+    3. Fetch keystore URL from KV
+    4. psql "$DB_KEYSTORE_URL" → query ciphertext from encrypted_encryption_keys
+    5. az keyvault key decrypt → decrypt ciphertext
+    6. Write DECRYPTION_KEY, DB_PASSWORD, DB_KEYSTORE_URL to /decrypted-secrets/
+
+  fetch-keys:    reads $DB_KEYSTORE_URL and $DECRYPTION_KEY from /decrypted-secrets/
+  migrations:    reads $DB_PASSWORD from /decrypted-secrets/
+  web3signer:    reads DB_PASSWORD → WEB3SIGNER_ETH2_SLASHING_PROTECTION_DB_PASSWORD
+```
+
+The K8s secret only contains non-sensitive metadata (KV secret names, client cluster ID, Azure config).
+
+### How It Works (Standard Mode)
+
+When `encryptedDecryptionKey.enabled=true` without `useKeyVaultSecrets`:
 
 1. A `decrypt-secret` init container is automatically injected before other init containers
 2. This container uses AWS CLI or Azure CLI (depending on provider) to decrypt the ciphertext
 3. The decrypted value is written to `/decrypted-secrets/DECRYPTION_KEY` (memory-backed volume)
 4. The `fetch-keys` container reads the decryption key from this file instead of environment variables
 5. On pod restart, the entire process repeats (key is never persisted)
-
-```
-Pod Startup Flow:
-
-  +------------------+     +------------------+     +------------------+
-  | decrypt-secret   | --> | init             | --> | fetch-keys       |
-  | (AWS KMS/Azure)  |     | (create dirs)    |     | (sync keys)      |
-  +------------------+     +------------------+     +------------------+
-          |                                                  |
-          v                                                  v
-  /decrypted-secrets/                              reads DECRYPTION_KEY
-  DECRYPTION_KEY                                   from file
-  (memory volume)
-```
 
 ## Init Containers
 
