@@ -3,13 +3,13 @@ entries:
   besu:
   - apiVersion: v2
     appVersion: 24.8.0
-    created: "2026-03-05T18:41:28.942141298Z"
+    created: "2026-03-30T15:08:07.307385591Z"
     dependencies:
     - name: common
       repository: https://charts.staking.galaxy.com/
       version: 1.x.x
     description: An enterprise-grade Java-based, Apache 2.0 licensed Ethereum client.
-    digest: 89ab934d6837313ec47ff34e248812b5bbd1794957e973e4ff30b6d740601790
+    digest: f2996430194833dc17f55dcb6f11606e58759ce80a5ca6c653777a668e4b869d
     home: https://galaxy.com/staking
     icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
     keywords:
@@ -188,10 +188,10 @@ entries:
   common:
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-03-05T18:41:28.942320261Z"
+    created: "2026-03-30T15:08:07.307759247Z"
     description: A Library Helm Chart for grouping common logic between stakewise
       charts. This chart is not deployable by itself.
-    digest: ee2ffb8dfe3ce1c764d3698d8c3c5bd066e0678dc08a2962b245ec91b13c9c04
+    digest: a0a5005e7fa0018150f33777627fef725d714e18aa561bf519855a1acf8ed4e1
     name: common
     type: library
     urls:
@@ -200,13 +200,13 @@ entries:
   erigon:
   - apiVersion: v2
     appVersion: v2.60.4
-    created: "2026-03-05T18:41:28.94320176Z"
+    created: "2026-03-30T15:08:07.308717591Z"
     dependencies:
     - name: common
       repository: https://charts.staking.galaxy.com/
       version: 1.x.x
     description: Ethereum implementation on the efficiency frontier
-    digest: 84bcce4a3b455a1286fbac4b3ded8ecad7b01e66923e756985afa78e752b8cfe
+    digest: 53f1bc660be8d298cda9bb49c941f39524c5a92d0da97841396211963da2dd6f
     icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
     keywords:
     - ethereum
@@ -333,13 +333,13 @@ entries:
   geth:
   - apiVersion: v2
     appVersion: v1.14.7
-    created: "2026-03-05T18:41:28.944083599Z"
+    created: "2026-03-30T15:08:07.309637995Z"
     dependencies:
     - name: common
       repository: https://charts.staking.galaxy.com/
       version: 1.x.x
     description: Official Golang implementation of the Ethereum v1 protocol.
-    digest: 977e31ce9a6d635598287ac6510a3b34571e2491e30762f21e3219faa6a3f8d3
+    digest: 7fcdb56287ee4665f8d995f7248cf8b2b84469bf6ecc9f864db7abc638e65282
     home: https://www.ethereum.org/
     icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
     keywords:
@@ -478,13 +478,13 @@ entries:
   lighthouse:
   - apiVersion: v2
     appVersion: v5.3.0
-    created: "2026-03-05T18:41:28.944989784Z"
+    created: "2026-03-30T15:08:07.310557107Z"
     dependencies:
     - name: common
       repository: https://charts.staking.galaxy.com/
       version: 1.x.x
     description: Rust Ethereum Client.
-    digest: e220fcf461f733c1c1a00e9afbe14e8eed25580fcbab6bc77b9e225f408e3a86
+    digest: e5767ae4e3f4004c1e1bb1831b3bb52d55e031cf03135964406a415b3012eadc
     home: https://www.ethereum.org/
     icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
     keywords:
@@ -647,14 +647,14 @@ entries:
   mev-boost:
   - apiVersion: v2
     appVersion: v1.7.1
-    created: "2026-03-05T18:41:28.946215348Z"
+    created: "2026-03-30T15:08:07.311063189Z"
     dependencies:
     - name: common
       repository: https://charts.staking.galaxy.com/
       version: 1.x.x
     description: mev-boost allows proof-of-stake Ethereum consensus clients to outsource
       block construction
-    digest: db48de3a517b5b2284b531017abd55f2f8284f7a93233ba325b8857d428a16d3
+    digest: 65517d1d409edeb98efaa0609aac0e59503f5251aad898126cd40b92565f778f
     home: https://boost.flashbots.net/
     keywords:
     - ethereum
@@ -708,13 +708,13 @@ entries:
   nethermind:
   - apiVersion: v2
     appVersion: v1.28.0
-    created: "2026-03-05T18:41:28.947226027Z"
+    created: "2026-03-30T15:08:07.311972763Z"
     dependencies:
     - name: common
       repository: https://charts.staking.galaxy.com/
       version: 1.x.x
     description: .NET Core Ethereum client
-    digest: 031604eb0dd49eb1d069b51dc472050e73711debbc8d0e8eade816d026f44b11
+    digest: 9ddfd541c89c07d94440ed938ae271240515fa272a90ca2e2830f3ccb842bacb
     home: https://nethermind.io/
     icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
     keywords:
@@ -870,13 +870,13 @@ entries:
   nimbus:
   - apiVersion: v2
     appVersion: v24.7.0
-    created: "2026-03-05T18:41:28.94814738Z"
+    created: "2026-03-30T15:08:07.312863632Z"
     dependencies:
     - name: common
       repository: https://charts.staking.galaxy.com/
       version: 1.x.x
     description: Nim implementation of the Ethereum Beacon Chain
-    digest: 2e1b1e2cc3c64973ff805a982878857ccd6fa3c2a703a6cb9abe8ecdc658d137
+    digest: a669ba7a74c65d14fc468e6c8ec08595843501f4c82b48023fbec56eedf953e7
     home: https://www.ethereum.org/
     icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
     keywords:
@@ -1015,13 +1015,13 @@ entries:
   prysm:
   - apiVersion: v2
     appVersion: v5.0.4
-    created: "2026-03-05T18:41:28.949179138Z"
+    created: "2026-03-30T15:08:07.31381832Z"
     dependencies:
     - name: common
       repository: https://charts.staking.galaxy.com/
       version: 1.x.x
     description: Go implementation of Ethereum proof of stake.
-    digest: 06585cfbd0b4d04e7d27a5393656d63247eaeaad8c873983bd1c2e3dc2ac1b55
+    digest: 74180474e8cc1bd75931fd52042877de9108cf1c2e5901a6df8ab8fc5b2ae50b
     home: https://www.ethereum.org/
     icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
     keywords:
@@ -1160,13 +1160,13 @@ entries:
   teku:
   - apiVersion: v2
     appVersion: 24.8.0
-    created: "2026-03-05T18:41:28.95015873Z"
+    created: "2026-03-30T15:08:07.314768479Z"
     dependencies:
     - name: common
       repository: https://charts.staking.galaxy.com/
       version: 1.x.x
     description: Teku is an open-source Ethereum client written in Java.
-    digest: b269e81077c1feac5db770da34075ee78215a7d462f76121a08324da1ce88e83
+    digest: d6d9bac01dedea4a7fa16727996e20efae1c1c46908aca3fd5c172591cc4809b
     home: https://galaxy.com/staking
     icon: https://raw.githubusercontent.com/ethereum/ethereum-org/master/public/images/logos/ETHEREUM-ICON_Black.png
     keywords:
@@ -1322,9 +1322,9 @@ entries:
   validators:
   - apiVersion: v2
     appVersion: v6.1.0
-    created: "2026-03-05T18:41:28.950985437Z"
+    created: "2026-03-30T15:08:07.316441169Z"
     description: A Helm chart for installing validators with the web3signer.
-    digest: 17d2168b716310c2c4b62a560889aaeca7406136c4f2be21f3e77af1f1cca328
+    digest: 7ad7e375e05edd92509f3761d713a86fbcf513268effdcccac903cdcbbde9974
     home: https://galaxy.com/staking
     keywords:
     - ethereum
@@ -1783,6 +1783,27 @@ entries:
   web3signer:
   - apiVersion: v2
     appVersion: latest
+    created: "2026-03-30T15:08:07.317584809Z"
+    dependencies:
+    - name: common
+      repository: https://charts.staking.galaxy.com/
+      version: 1.x.x
+    description: A Helm chart for installing and configuring large scale ETH staking
+      infrastructure on top of the Kubernetes
+    digest: d27a1a8e10b5db9e17afe07be7852960fc42f7110d39b4986cdf1528ccc972d3
+    home: https://docs.web3signer.consensys.io/
+    keywords:
+    - ethereum
+    - blockchain
+    - staking
+    - web3signer
+    name: web3signer
+    type: application
+    urls:
+    - https://GalaxyDigitalPublic.github.io/eth-staking-charts/web3signer-6.4.0.tgz
+    version: 6.4.0
+  - apiVersion: v2
+    appVersion: latest
     created: "2026-03-05T18:41:28.952231133Z"
     dependencies:
     - name: common
@@ -2079,4 +2100,4 @@ entries:
     urls:
     - https://charts.staking.galaxy.com/web3signer-4.1.3.tgz
     version: 4.1.3
-generated: "2026-03-05T18:41:28.941062191Z"
+generated: "2026-03-30T15:08:07.305644073Z"
