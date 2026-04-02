@@ -133,7 +133,7 @@ Create the name of the service account to use
         {{- if .Values.encryptedDecryptionKey.azure.keyVersion }}
         --version "$AZURE_KEY_VERSION" \
         {{- end }}
-        --query result --output tsv | base64 -d)
+        --query result --output tsv)
       {{- end }}
       echo -n "$DECRYPTED" > /decrypted-secrets/DECRYPTION_KEY
       {{- if and (eq $provider "azure") .Values.encryptedDecryptionKey.useKeyVaultSecrets }}
