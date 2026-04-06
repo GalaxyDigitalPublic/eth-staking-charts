@@ -19,6 +19,12 @@ image:
 ##
 dbKeystoreUrl: ""
 
+## Database table name for validator keys (sync-keys 0.4.0+).
+## When set, passes --table-name to sync-web3signer-keys.
+## Leave empty to use the tool's default table name.
+##
+dbKeystoreTableName: ""
+
 ## The key for decrypting private keys is generated with stakewise-cli sync-db command
 ## Use this for plain text decryption key (legacy mode)
 ##
@@ -446,7 +452,6 @@ initContainers:
       - flyway
     args:
       - "-user={{ .Values.dbUsername }}"
-      - "-password={{ .Values.dbPassword }}"
       - "-url={{ .Values.dbUrl }}"
       - "-locations=filesystem:/migrations"
       - "migrate"

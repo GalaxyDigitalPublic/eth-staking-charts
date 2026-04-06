@@ -160,6 +160,8 @@ Create the name of the service account to use
 {{- $mainImage := .root.Values.image -}}
 {{- $useEncryptedSecret := and .root.Values.encryptedDecryptionKey.enabled .container.usesDecryptedSecret -}}
 {{- $useKeyVaultSecrets := and $useEncryptedSecret .root.Values.encryptedDecryptionKey.useKeyVaultSecrets -}}
+{{- $isFetchKeys := eq .container.name "fetch-keys" -}}
+{{- $isMigrations := eq .container.name "migrations" -}}
 
 - name: {{ .container.name }}
   {{- if .container.image }}
@@ -178,6 +180,14 @@ Create the name of the service account to use
   {{- range .container.args }}
   {{- $renderedArgs = append $renderedArgs (tpl . $.root) }}
   {{- end }}
+  {{- if and $isFetchKeys .root.Values.dbKeystoreTableName }}
+  {{- $renderedArgs = append $renderedArgs "--table-name" }}
+  {{- $renderedArgs = append $renderedArgs .root.Values.dbKeystoreTableName }}
+  {{- end }}
+  {{- if and $isFetchKeys $useKeyVaultSecrets (not .root.Values.dbKeystoreUrl) }}
+  {{- $renderedArgs = append $renderedArgs "--db-url" }}
+  {{- $renderedArgs = append $renderedArgs "$DB_KEYSTORE_URL" }}
+  {{- end }}
   command:
     - /bin/sh
     - -c
@@ -187,6 +197,13 @@ Create the name of the service account to use
       {{- if $useKeyVaultSecrets }}
       export DB_PASSWORD=$(cat /decrypted-secrets/DB_PASSWORD)
       export DB_KEYSTORE_URL=$(cat /decrypted-secrets/DB_KEYSTORE_URL)
+      {{- end }}
+      {{- if $isMigrations }}
+      {{- if $useKeyVaultSecrets }}
+      export FLYWAY_PASSWORD="$DB_PASSWORD"
+      {{- else }}
+      export FLYWAY_PASSWORD={{ .root.Values.dbPassword | quote }}
+      {{- end }}
       {{- end }}
       {{- if .container.command }}
       exec {{ range .container.command }}{{ tpl . $.root | quote }} {{ end }}{{ range $renderedArgs }}{{ . | quote }} {{ end }}
@@ -201,17 +218,27 @@ Create the name of the service account to use
   command:
     {{- (tpl (toYaml .container.command) .root) | nindent 4 }}
   {{- end }}
-  {{- if .container.args }}
+  {{- if or .container.args (and $isFetchKeys .root.Values.dbKeystoreTableName) }}
   args:
+    {{- if .container.args }}
     {{- (tpl (toYaml .container.args) .root) | nindent 2 }}
+    {{- end }}
+    {{- if and $isFetchKeys .root.Values.dbKeystoreTableName }}
+    {{- (list "--table-name" .root.Values.dbKeystoreTableName | toYaml) | nindent 2 }}
+    {{- end }}
   {{- end }}
   {{- end }}
   {{- if .container.workingDir }}
   workingDir: {{ .container.workingDir }}
   {{- end }}
-  {{- if .container.env }}
+  {{- if or .container.env (and $isMigrations (not $useEncryptedSecret)) }}
   env:
+    {{- if .container.env }}
     {{- (tpl (toYaml .container.env) .root) | nindent 2 }}
+    {{- end }}
+    {{- if and $isMigrations (not $useEncryptedSecret) }}
+    {{- (list (dict "name" "FLYWAY_PASSWORD" "value" .root.Values.dbPassword) | toYaml) | nindent 2 }}
+    {{- end }}
   {{- end }}
   {{- if and .container.envFrom (not $useEncryptedSecret) }}
   envFrom:
