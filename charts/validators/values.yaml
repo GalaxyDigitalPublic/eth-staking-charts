@@ -40,7 +40,7 @@ initImageBusybox:
 cliImage:
   registry: "ghcr.io"
   repository: "galaxydigitalpublic/sync-keys"
-  tag: "0.4.0"
+  tag: "0.4.1"
   pullPolicy: Always
 
 ## Database connection string, ex. 'postgresql://username:pass@hostname/dbname'
