@@ -25,6 +25,16 @@ dbKeystoreUrl: ""
 ##
 dbKeystoreTableName: ""
 
+## Restrict fetched keys to a single cluster (sync-keys 0.4.2+). Required when the keystore
+## table carries a client_cluster_id column, because that table holds more than one cluster's
+## keys and sync-keys otherwise refuses to run. Leave empty for the agent-managed table,
+## which has no such column.
+dbKeystoreClientClusterId: ""
+## Deliberately load every cluster's keys from a cluster-scoped table (sync-keys 0.4.2+).
+## Only correct when this signer really does serve every cluster in that table. Mutually
+## exclusive with dbKeystoreClientClusterId.
+dbKeystoreAllClusters: false
+
 ## The key for decrypting private keys is generated with stakewise-cli sync-db command
 ## Use this for plain text decryption key (legacy mode)
 ##

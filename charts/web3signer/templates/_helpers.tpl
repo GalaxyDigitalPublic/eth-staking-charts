@@ -88,11 +88,16 @@ Create the name of the service account to use
       export AWS_SESSION_TOKEN=$(echo $CREDS | sed -n 's/.*"SessionToken": "\([^"]*\)".*/\1/p')
       {{- end }}
       echo "$ENCRYPTED_DECRYPTION_KEY" | base64 -d > /tmp/ciphertext.bin
+      # Leave the value base64-encoded. sync-keys base64-decodes DECRYPTION_KEY itself, and
+      # the Azure branch below likewise writes base64. Decoding here also lost bytes: raw key
+      # material does not survive a shell command substitution, so a key containing a null
+      # byte was silently truncated and sync-keys then failed with
+      # "Incorrect AES key length". That affects roughly one random 32-byte key in eight.
       DECRYPTED=$(aws kms decrypt \
         --region "$AWS_REGION" \
         --ciphertext-blob fileb:///tmp/ciphertext.bin \
         --output text \
-        --query Plaintext | base64 -d)
+        --query Plaintext)
       rm -f /tmp/ciphertext.bin
       {{- else if eq $provider "azure" }}
       echo "Decrypting secret using Azure Key Vault..."
@@ -183,6 +188,16 @@ Create the name of the service account to use
   {{- if and $isFetchKeys .root.Values.dbKeystoreTableName }}
   {{- $renderedArgs = append $renderedArgs "--table-name" }}
   {{- $renderedArgs = append $renderedArgs .root.Values.dbKeystoreTableName }}
+  {{- end }}
+  {{- if and .root.Values.dbKeystoreClientClusterId .root.Values.dbKeystoreAllClusters }}
+  {{- fail "web3signer: set dbKeystoreClientClusterId or dbKeystoreAllClusters, not both" }}
+  {{- end }}
+  {{- if and $isFetchKeys .root.Values.dbKeystoreClientClusterId }}
+  {{- $renderedArgs = append $renderedArgs "--client-cluster-id" }}
+  {{- $renderedArgs = append $renderedArgs .root.Values.dbKeystoreClientClusterId }}
+  {{- end }}
+  {{- if and $isFetchKeys .root.Values.dbKeystoreAllClusters }}
+  {{- $renderedArgs = append $renderedArgs "--all-clusters" }}
   {{- end }}
   {{- if and $isFetchKeys $useKeyVaultSecrets (not .root.Values.dbKeystoreUrl) }}
   {{- $renderedArgs = append $renderedArgs "--db-url" }}
