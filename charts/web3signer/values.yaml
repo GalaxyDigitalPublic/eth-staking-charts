@@ -27,14 +27,14 @@ dbKeystoreTableName: ""
 
 ## NOTE: the fetch-keys init container below still defaults to sync-keys 0.4.1, which does not
 ## understand the options here. A release that sets any of them must also pin
-## initContainers[fetch-keys].image.tag to 0.4.2 or newer. The default is deliberately left
+## initContainers[fetch-keys].image.tag to 0.4.3 or newer. The default is deliberately left
 ## alone: every release pins a chart version, so changing it would not affect anyone
 ## immediately, but it would silently bundle a sync-keys upgrade into whichever release next
 ## adopts this chart version. Image bumps should be their own decision.
 ##
-## When that default does move, a namespace whose keystore query returns no rows needs
-## dbKeystoreAllowNoKeys in the same change, or its init container will fail. QA's
-## euw1/hoodi-2 is one such namespace.
+## 0.4.2 must be skipped: it refuses a zero-row read unconditionally, which stops a signer
+## that legitimately serves no validators from starting. 0.4.3 tolerates an empty table and
+## refuses only when the table holds keys that do not match the cluster asked for.
 ##
 ## Restrict fetched keys to these clusters. Required when the keystore table carries a
 ## client_cluster_id column, because that table holds more than one cluster's keys and
@@ -49,11 +49,6 @@ dbKeystoreClientClusterIds: []
 ## signer really does serve every cluster in that table, including ones added later. Prefer
 ## naming the clusters. Mutually exclusive with dbKeystoreClientClusterIds.
 dbKeystoreAllClusters: false
-## Start with an empty keystore when the keystore table returns no rows, instead of failing
-## the init container. Set this only for a signer that is deployed but serves no validators
-## yet; otherwise a wrong cluster id or an unpopulated table should stop the pod rather than
-## bring up a signer that cannot sign.
-dbKeystoreAllowNoKeys: false
 
 ## The key for decrypting private keys is generated with stakewise-cli sync-db command
 ## Use this for plain text decryption key (legacy mode)

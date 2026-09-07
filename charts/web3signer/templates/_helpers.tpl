@@ -190,9 +190,6 @@ Create the name of the service account to use
   {{- if .root.Values.dbKeystoreAllClusters -}}
     {{- $fetchKeysFlags = concat $fetchKeysFlags (list "--all-clusters") -}}
   {{- end -}}
-  {{- if .root.Values.dbKeystoreAllowNoKeys -}}
-    {{- $fetchKeysFlags = concat $fetchKeysFlags (list "--allow-no-keys") -}}
-  {{- end -}}
 {{- end -}}
 
 - name: {{ .container.name }}
