@@ -26,11 +26,15 @@ dbKeystoreUrl: ""
 dbKeystoreTableName: ""
 
 ## NOTE: the fetch-keys init container below still defaults to sync-keys 0.4.1, which does not
-## understand the two options here. A release that sets either one must also pin
-## initContainers[fetch-keys].image.tag to 0.4.2 or newer. The default is deliberately left
+## understand the options here. A release that sets any of them must also pin
+## initContainers[fetch-keys].image.tag to 0.5.0 or newer. The default is deliberately left
 ## alone: every release pins a chart version, so changing it would not affect anyone
 ## immediately, but it would silently bundle a sync-keys upgrade into whichever release next
 ## adopts this chart version. Image bumps should be their own decision.
+##
+## When that default does move, a namespace whose keystore query returns no rows needs
+## dbKeystoreAllowNoKeys in the same change, or its init container will fail. QA's
+## euw1/hoodi-2 is one such namespace.
 ##
 ## Restrict fetched keys to these clusters. Required when the keystore table carries a
 ## client_cluster_id column, because that table holds more than one cluster's keys and
