@@ -45,6 +45,11 @@ dbKeystoreClientClusterIds: []
 ## signer really does serve every cluster in that table, including ones added later. Prefer
 ## naming the clusters. Mutually exclusive with dbKeystoreClientClusterIds.
 dbKeystoreAllClusters: false
+## Start with an empty keystore when the keystore table returns no rows, instead of failing
+## the init container. Set this only for a signer that is deployed but serves no validators
+## yet; otherwise a wrong cluster id or an unpopulated table should stop the pod rather than
+## bring up a signer that cannot sign.
+dbKeystoreAllowNoKeys: false
 
 ## The key for decrypting private keys is generated with stakewise-cli sync-db command
 ## Use this for plain text decryption key (legacy mode)

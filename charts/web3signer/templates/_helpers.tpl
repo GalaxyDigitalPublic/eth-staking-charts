@@ -167,6 +167,33 @@ Create the name of the service account to use
 {{- $useKeyVaultSecrets := and $useEncryptedSecret .root.Values.encryptedDecryptionKey.useKeyVaultSecrets -}}
 {{- $isFetchKeys := eq .container.name "fetch-keys" -}}
 {{- $isMigrations := eq .container.name "migrations" -}}
+{{- /*
+  Extra sync-keys flags for the fetch-keys container. Built once here because there are two
+  arg-rendering paths below -- the encryptedDecryptionKey one that execs through a shell, and
+  the plain command/args one -- and a flag added to only one of them is silently dropped on
+  every release using the other.
+*/ -}}
+{{- $fetchKeysFlags := list -}}
+{{- if $isFetchKeys -}}
+  {{- if and .root.Values.dbKeystoreClientClusterIds .root.Values.dbKeystoreAllClusters -}}
+    {{- fail "web3signer: set dbKeystoreClientClusterIds or dbKeystoreAllClusters, not both" -}}
+  {{- end -}}
+  {{- if .root.Values.dbKeystoreTableName -}}
+    {{- $fetchKeysFlags = concat $fetchKeysFlags (list "--table-name" .root.Values.dbKeystoreTableName) -}}
+  {{- end -}}
+  {{- range .root.Values.dbKeystoreClientClusterIds -}}
+    {{- if not . -}}
+      {{- fail "web3signer: dbKeystoreClientClusterIds must not contain an empty value" -}}
+    {{- end -}}
+    {{- $fetchKeysFlags = concat $fetchKeysFlags (list "--client-cluster-id" .) -}}
+  {{- end -}}
+  {{- if .root.Values.dbKeystoreAllClusters -}}
+    {{- $fetchKeysFlags = concat $fetchKeysFlags (list "--all-clusters") -}}
+  {{- end -}}
+  {{- if .root.Values.dbKeystoreAllowNoKeys -}}
+    {{- $fetchKeysFlags = concat $fetchKeysFlags (list "--allow-no-keys") -}}
+  {{- end -}}
+{{- end -}}
 
 - name: {{ .container.name }}
   {{- if .container.image }}
@@ -185,25 +212,7 @@ Create the name of the service account to use
   {{- range .container.args }}
   {{- $renderedArgs = append $renderedArgs (tpl . $.root) }}
   {{- end }}
-  {{- if and $isFetchKeys .root.Values.dbKeystoreTableName }}
-  {{- $renderedArgs = append $renderedArgs "--table-name" }}
-  {{- $renderedArgs = append $renderedArgs .root.Values.dbKeystoreTableName }}
-  {{- end }}
-  {{- if and .root.Values.dbKeystoreClientClusterIds .root.Values.dbKeystoreAllClusters }}
-  {{- fail "web3signer: set dbKeystoreClientClusterIds or dbKeystoreAllClusters, not both" }}
-  {{- end }}
-  {{- if $isFetchKeys }}
-  {{- range .root.Values.dbKeystoreClientClusterIds }}
-  {{- if not . }}
-  {{- fail "web3signer: dbKeystoreClientClusterIds must not contain an empty value" }}
-  {{- end }}
-  {{- $renderedArgs = append $renderedArgs "--client-cluster-id" }}
-  {{- $renderedArgs = append $renderedArgs . }}
-  {{- end }}
-  {{- end }}
-  {{- if and $isFetchKeys .root.Values.dbKeystoreAllClusters }}
-  {{- $renderedArgs = append $renderedArgs "--all-clusters" }}
-  {{- end }}
+  {{- $renderedArgs = concat $renderedArgs $fetchKeysFlags }}
   {{- if and $isFetchKeys $useKeyVaultSecrets (not .root.Values.dbKeystoreUrl) }}
   {{- $renderedArgs = append $renderedArgs "--db-url" }}
   {{- $renderedArgs = append $renderedArgs "$DB_KEYSTORE_URL" }}
@@ -238,13 +247,13 @@ Create the name of the service account to use
   command:
     {{- (tpl (toYaml .container.command) .root) | nindent 4 }}
   {{- end }}
-  {{- if or .container.args (and $isFetchKeys .root.Values.dbKeystoreTableName) }}
+  {{- if or .container.args $fetchKeysFlags }}
   args:
     {{- if .container.args }}
     {{- (tpl (toYaml .container.args) .root) | nindent 2 }}
     {{- end }}
-    {{- if and $isFetchKeys .root.Values.dbKeystoreTableName }}
-    {{- (list "--table-name" .root.Values.dbKeystoreTableName | toYaml) | nindent 2 }}
+    {{- if $fetchKeysFlags }}
+    {{- (toYaml $fetchKeysFlags) | nindent 2 }}
     {{- end }}
   {{- end }}
   {{- end }}
