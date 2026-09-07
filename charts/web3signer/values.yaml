@@ -28,8 +28,9 @@ dbKeystoreTableName: ""
 ## NOTE: the fetch-keys init container below still defaults to sync-keys 0.4.1, which does not
 ## understand the two options here. A release that sets either one must also pin
 ## initContainers[fetch-keys].image.tag to 0.4.2 or newer. The default is deliberately left
-## alone: releases inherit it, so bumping it here would change the image every existing
-## web3signer pulls, production included.
+## alone: every release pins a chart version, so changing it would not affect anyone
+## immediately, but it would silently bundle a sync-keys upgrade into whichever release next
+## adopts this chart version. Image bumps should be their own decision.
 ##
 ## Restrict fetched keys to a single cluster (sync-keys 0.4.2+). Required when the keystore
 ## table carries a client_cluster_id column, because that table holds more than one cluster's
