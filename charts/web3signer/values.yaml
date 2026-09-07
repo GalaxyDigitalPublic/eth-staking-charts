@@ -27,7 +27,7 @@ dbKeystoreTableName: ""
 
 ## NOTE: the fetch-keys init container below still defaults to sync-keys 0.4.1, which does not
 ## understand the options here. A release that sets any of them must also pin
-## initContainers[fetch-keys].image.tag to 0.5.0 or newer. The default is deliberately left
+## initContainers[fetch-keys].image.tag to 0.4.2 or newer. The default is deliberately left
 ## alone: every release pins a chart version, so changing it would not affect anyone
 ## immediately, but it would silently bundle a sync-keys upgrade into whichever release next
 ## adopts this chart version. Image bumps should be their own decision.
