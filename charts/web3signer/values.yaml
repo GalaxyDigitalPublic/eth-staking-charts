@@ -32,14 +32,18 @@ dbKeystoreTableName: ""
 ## immediately, but it would silently bundle a sync-keys upgrade into whichever release next
 ## adopts this chart version. Image bumps should be their own decision.
 ##
-## Restrict fetched keys to a single cluster (sync-keys 0.4.2+). Required when the keystore
-## table carries a client_cluster_id column, because that table holds more than one cluster's
-## keys and sync-keys otherwise refuses to run. Leave empty for the agent-managed table,
-## which has no such column.
-dbKeystoreClientClusterId: ""
-## Deliberately load every cluster's keys from a cluster-scoped table (sync-keys 0.4.2+).
-## Only correct when this signer really does serve every cluster in that table. Mutually
-## exclusive with dbKeystoreClientClusterId.
+## Restrict fetched keys to these clusters. Required when the keystore table carries a
+## client_cluster_id column, because that table holds more than one cluster's keys and
+## sync-keys otherwise refuses to run. Leave empty for the agent-managed table, which has no
+## such column.
+##
+## A list, because one signer can legitimately serve several clusters. Naming them is
+## preferable to dbKeystoreAllClusters: the set is closed, so a cluster added to the same
+## database later is not served unless it is added here.
+dbKeystoreClientClusterIds: []
+## Deliberately load every cluster's keys from a cluster-scoped table. Only correct when this
+## signer really does serve every cluster in that table, including ones added later. Prefer
+## naming the clusters. Mutually exclusive with dbKeystoreClientClusterIds.
 dbKeystoreAllClusters: false
 
 ## The key for decrypting private keys is generated with stakewise-cli sync-db command

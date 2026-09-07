@@ -189,12 +189,17 @@ Create the name of the service account to use
   {{- $renderedArgs = append $renderedArgs "--table-name" }}
   {{- $renderedArgs = append $renderedArgs .root.Values.dbKeystoreTableName }}
   {{- end }}
-  {{- if and .root.Values.dbKeystoreClientClusterId .root.Values.dbKeystoreAllClusters }}
-  {{- fail "web3signer: set dbKeystoreClientClusterId or dbKeystoreAllClusters, not both" }}
+  {{- if and .root.Values.dbKeystoreClientClusterIds .root.Values.dbKeystoreAllClusters }}
+  {{- fail "web3signer: set dbKeystoreClientClusterIds or dbKeystoreAllClusters, not both" }}
   {{- end }}
-  {{- if and $isFetchKeys .root.Values.dbKeystoreClientClusterId }}
+  {{- if $isFetchKeys }}
+  {{- range .root.Values.dbKeystoreClientClusterIds }}
+  {{- if not . }}
+  {{- fail "web3signer: dbKeystoreClientClusterIds must not contain an empty value" }}
+  {{- end }}
   {{- $renderedArgs = append $renderedArgs "--client-cluster-id" }}
-  {{- $renderedArgs = append $renderedArgs .root.Values.dbKeystoreClientClusterId }}
+  {{- $renderedArgs = append $renderedArgs . }}
+  {{- end }}
   {{- end }}
   {{- if and $isFetchKeys .root.Values.dbKeystoreAllClusters }}
   {{- $renderedArgs = append $renderedArgs "--all-clusters" }}
