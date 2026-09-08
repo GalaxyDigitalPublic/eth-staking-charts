@@ -88,11 +88,13 @@ Create the name of the service account to use
       export AWS_SESSION_TOKEN=$(echo $CREDS | sed -n 's/.*"SessionToken": "\([^"]*\)".*/\1/p')
       {{- end }}
       echo "$ENCRYPTED_DECRYPTION_KEY" | base64 -d > /tmp/ciphertext.bin
-      # Leave the value base64-encoded. sync-keys base64-decodes DECRYPTION_KEY itself, and
-      # the Azure branch below likewise writes base64. Decoding here also lost bytes: raw key
-      # material does not survive a shell command substitution, so a key containing a null
-      # byte was silently truncated and sync-keys then failed with
-      # "Incorrect AES key length". That affects roughly one random 32-byte key in eight.
+      # Leave the value base64-encoded. sync-keys base64-decodes DECRYPTION_KEY itself in
+      # utils.str_to_bytes, and the Azure branch below likewise writes base64. Decoding here
+      # corrupted the key rather than truncating it: command substitution drops every NUL byte
+      # and strips trailing newlines, so a 32-byte key came back one byte short per NUL and
+      # sync-keys failed with "Incorrect AES key length". Measured, not inferred -- 32 bytes in,
+      # 31 out for one NUL, 30 for two. About one random 32-byte key in eight holds at least
+      # one NUL (1 - (255/256)^32 = 11.8%), which is why this looked intermittent.
       DECRYPTED=$(aws kms decrypt \
         --region "$AWS_REGION" \
         --ciphertext-blob fileb:///tmp/ciphertext.bin \
@@ -236,8 +238,13 @@ Create the name of the service account to use
       {{- else if .container.args }}
       exec {{ range $renderedArgs }}{{ . | quote }} {{ end }}
       {{- else }}
-      echo "Error: No command or args specified for container with usesDecryptedSecret"
-      exit 1
+      {{- /*
+        Nothing to exec. This wrapper replaces the image entrypoint with /bin/sh -c, so unlike
+        the plain command/args path below it cannot fall back to the image ENTRYPOINT -- and it
+        cannot exec the flags alone, because the first word would be taken as the program name.
+        Fail the render instead of emitting a container that exits 1 during a rollout.
+      */ -}}
+      {{- fail (printf "web3signer: init container %q sets usesDecryptedSecret but declares neither command nor args. The decrypted-secret wrapper replaces the image entrypoint, so one of them must be set explicitly." .container.name) }}
       {{- end }}
   {{- else }}
   {{- if .container.command }}

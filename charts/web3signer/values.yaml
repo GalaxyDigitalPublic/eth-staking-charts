@@ -27,10 +27,14 @@ dbKeystoreTableName: ""
 
 ## NOTE: the fetch-keys init container below still defaults to sync-keys 0.4.1, which does not
 ## understand the options here. A release that sets any of them must also pin
-## initContainers[fetch-keys].image.tag to 0.4.3 or newer. The default is deliberately left
-## alone: every release pins a chart version, so changing it would not affect anyone
-## immediately, but it would silently bundle a sync-keys upgrade into whichever release next
-## adopts this chart version. Image bumps should be their own decision.
+## initContainers[fetch-keys].image.tag to 0.4.3 or newer. An older image fails loudly rather
+## than quietly ignoring the flag -- click exits 2 with "No such option: --client-cluster-id",
+## so the init container crashloops and the signer never starts. That is the safe direction:
+## the flag cannot be silently dropped and leave a signer serving more keys than intended.
+##
+## The default is deliberately left alone: every release pins a chart version, so changing it
+## would not affect anyone immediately, but it would silently bundle a sync-keys upgrade into
+## whichever release next adopts this chart version. Image bumps should be their own decision.
 ##
 ## 0.4.2 must be skipped: it refuses a zero-row read unconditionally, which stops a signer
 ## that legitimately serves no validators from starting. 0.4.3 tolerates an empty table and
