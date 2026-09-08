@@ -88,13 +88,16 @@ Create the name of the service account to use
       export AWS_SESSION_TOKEN=$(echo $CREDS | sed -n 's/.*"SessionToken": "\([^"]*\)".*/\1/p')
       {{- end }}
       echo "$ENCRYPTED_DECRYPTION_KEY" | base64 -d > /tmp/ciphertext.bin
-      # Leave the value base64-encoded. sync-keys base64-decodes DECRYPTION_KEY itself in
-      # utils.str_to_bytes, and the Azure branch below likewise writes base64. Decoding here
-      # corrupted the key rather than truncating it: command substitution drops every NUL byte
-      # and strips trailing newlines, so a 32-byte key came back one byte short per NUL and
-      # sync-keys failed with "Incorrect AES key length". Measured, not inferred -- 32 bytes in,
-      # 31 out for one NUL, 30 for two. About one random 32-byte key in eight holds at least
-      # one NUL (1 - (255/256)^32 = 11.8%), which is why this looked intermittent.
+      # Leave the value base64-encoded: the contract asserted below is that
+      # /decrypted-secrets/DECRYPTION_KEY holds base64, never raw key bytes. Decoding here made
+      # this branch write raw bytes, which sync-keys then base64-decoded again
+      # (utils.str_to_bytes), so every key was rejected -- not an occasional one. The Azure
+      # branch never had the bug because it writes the base64 its decrypt call returns.
+      #
+      # Raw bytes could not have worked anyway: the value passes through two command
+      # substitutions before sync-keys sees it, and the shell drops every NUL byte and strips
+      # trailing newlines, so a 32-byte key arrives one byte short per NUL. Base64 is ASCII and
+      # survives both.
       DECRYPTED=$(aws kms decrypt \
         --region "$AWS_REGION" \
         --ciphertext-blob fileb:///tmp/ciphertext.bin \
@@ -142,6 +145,22 @@ Create the name of the service account to use
         {{- end }}
         --query result --output tsv)
       {{- end }}
+      # Single point where every provider branch converges, so this is where the encoding
+      # contract belongs. Both decrypt calls already return standard base64 and sync-keys
+      # base64-decodes what it reads, so a value that does not decode to a valid AES key length
+      # means a branch above got it wrong. Checking it here fails at the cause with a clear
+      # message rather than as an opaque error inside sync-keys, and it covers both ways this
+      # has gone wrong: raw bytes instead of base64 (decodes to 0) and a key shortened by the
+      # shell eating a NUL (decodes to 31).
+      DECODED_LEN=$(printf '%s' "$DECRYPTED" | base64 -d 2>/dev/null | wc -c | tr -d ' ')
+      case "$DECODED_LEN" in
+        16|24|32) ;;
+        *)
+          echo "ERROR: decrypted DECRYPTION_KEY is not base64 of a 16/24/32-byte AES key" >&2
+          echo "ERROR: decoded to ${DECODED_LEN} bytes; expected base64 text, not raw key bytes" >&2
+          exit 1
+          ;;
+      esac
       echo -n "$DECRYPTED" > /decrypted-secrets/DECRYPTION_KEY
       {{- if and (eq $provider "azure") .Values.encryptedDecryptionKey.useKeyVaultSecrets }}
       echo -n "$DB_PASSWORD" > /decrypted-secrets/DB_PASSWORD
@@ -238,13 +257,8 @@ Create the name of the service account to use
       {{- else if .container.args }}
       exec {{ range $renderedArgs }}{{ . | quote }} {{ end }}
       {{- else }}
-      {{- /*
-        Nothing to exec. This wrapper replaces the image entrypoint with /bin/sh -c, so unlike
-        the plain command/args path below it cannot fall back to the image ENTRYPOINT -- and it
-        cannot exec the flags alone, because the first word would be taken as the program name.
-        Fail the render instead of emitting a container that exits 1 during a rollout.
-      */ -}}
-      {{- fail (printf "web3signer: init container %q sets usesDecryptedSecret but declares neither command nor args. The decrypted-secret wrapper replaces the image entrypoint, so one of them must be set explicitly." .container.name) }}
+      echo "Error: No command or args specified for container with usesDecryptedSecret"
+      exit 1
       {{- end }}
   {{- else }}
   {{- if .container.command }}
