@@ -191,25 +191,13 @@ Create the name of the service account to use
 {{- /*
   Extra sync-keys flags for the fetch-keys container. Built once here because there are two
   arg-rendering paths below -- the encryptedDecryptionKey one that execs through a shell, and
-  the plain command/args one -- and a flag added to only one of them is silently dropped on
-  every release using the other.
+  the plain command/args one -- and a flag appended to only one of them is silently dropped on
+  every release that happens to use the other.
 */ -}}
 {{- $fetchKeysFlags := list -}}
 {{- if $isFetchKeys -}}
-  {{- if and .root.Values.dbKeystoreClientClusterIds .root.Values.dbKeystoreAllClusters -}}
-    {{- fail "web3signer: set dbKeystoreClientClusterIds or dbKeystoreAllClusters, not both" -}}
-  {{- end -}}
   {{- if .root.Values.dbKeystoreTableName -}}
     {{- $fetchKeysFlags = concat $fetchKeysFlags (list "--table-name" .root.Values.dbKeystoreTableName) -}}
-  {{- end -}}
-  {{- range .root.Values.dbKeystoreClientClusterIds -}}
-    {{- if not . -}}
-      {{- fail "web3signer: dbKeystoreClientClusterIds must not contain an empty value" -}}
-    {{- end -}}
-    {{- $fetchKeysFlags = concat $fetchKeysFlags (list "--client-cluster-id" .) -}}
-  {{- end -}}
-  {{- if .root.Values.dbKeystoreAllClusters -}}
-    {{- $fetchKeysFlags = concat $fetchKeysFlags (list "--all-clusters") -}}
   {{- end -}}
 {{- end -}}
 
