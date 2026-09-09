@@ -88,11 +88,21 @@ Create the name of the service account to use
       export AWS_SESSION_TOKEN=$(echo $CREDS | sed -n 's/.*"SessionToken": "\([^"]*\)".*/\1/p')
       {{- end }}
       echo "$ENCRYPTED_DECRYPTION_KEY" | base64 -d > /tmp/ciphertext.bin
+      # Leave the value base64-encoded: the contract asserted below is that
+      # /decrypted-secrets/DECRYPTION_KEY holds base64, never raw key bytes. Decoding here made
+      # this branch write raw bytes, which sync-keys then base64-decoded again
+      # (utils.str_to_bytes), so every key was rejected -- not an occasional one. The Azure
+      # branch never had the bug because it writes the base64 its decrypt call returns.
+      #
+      # Raw bytes could not have worked anyway: the value passes through two command
+      # substitutions before sync-keys sees it, and the shell drops every NUL byte and strips
+      # trailing newlines, so a 32-byte key arrives one byte short per NUL. Base64 is ASCII and
+      # survives both.
       DECRYPTED=$(aws kms decrypt \
         --region "$AWS_REGION" \
         --ciphertext-blob fileb:///tmp/ciphertext.bin \
         --output text \
-        --query Plaintext | base64 -d)
+        --query Plaintext)
       rm -f /tmp/ciphertext.bin
       {{- else if eq $provider "azure" }}
       echo "Decrypting secret using Azure Key Vault..."
@@ -135,6 +145,22 @@ Create the name of the service account to use
         {{- end }}
         --query result --output tsv)
       {{- end }}
+      # Single point where every provider branch converges, so this is where the encoding
+      # contract belongs. Both decrypt calls already return standard base64 and sync-keys
+      # base64-decodes what it reads, so a value that does not decode to a valid AES key length
+      # means a branch above got it wrong. Checking it here fails at the cause with a clear
+      # message rather than as an opaque error inside sync-keys, and it covers both ways this
+      # has gone wrong: raw bytes instead of base64 (decodes to 0) and a key shortened by the
+      # shell eating a NUL (decodes to 31).
+      DECODED_LEN=$(printf '%s' "$DECRYPTED" | base64 -d 2>/dev/null | wc -c | tr -d ' ')
+      case "$DECODED_LEN" in
+        16|24|32) ;;
+        *)
+          echo "ERROR: decrypted DECRYPTION_KEY is not base64 of a 16/24/32-byte AES key" >&2
+          echo "ERROR: decoded to ${DECODED_LEN} bytes; expected base64 text, not raw key bytes" >&2
+          exit 1
+          ;;
+      esac
       echo -n "$DECRYPTED" > /decrypted-secrets/DECRYPTION_KEY
       {{- if and (eq $provider "azure") .Values.encryptedDecryptionKey.useKeyVaultSecrets }}
       echo -n "$DB_PASSWORD" > /decrypted-secrets/DB_PASSWORD
@@ -162,6 +188,18 @@ Create the name of the service account to use
 {{- $useKeyVaultSecrets := and $useEncryptedSecret .root.Values.encryptedDecryptionKey.useKeyVaultSecrets -}}
 {{- $isFetchKeys := eq .container.name "fetch-keys" -}}
 {{- $isMigrations := eq .container.name "migrations" -}}
+{{- /*
+  Extra sync-keys flags for the fetch-keys container. Built once here because there are two
+  arg-rendering paths below -- the encryptedDecryptionKey one that execs through a shell, and
+  the plain command/args one -- and a flag appended to only one of them is silently dropped on
+  every release that happens to use the other.
+*/ -}}
+{{- $fetchKeysFlags := list -}}
+{{- if $isFetchKeys -}}
+  {{- if .root.Values.dbKeystoreTableName -}}
+    {{- $fetchKeysFlags = concat $fetchKeysFlags (list "--table-name" .root.Values.dbKeystoreTableName) -}}
+  {{- end -}}
+{{- end -}}
 
 - name: {{ .container.name }}
   {{- if .container.image }}
@@ -180,10 +218,7 @@ Create the name of the service account to use
   {{- range .container.args }}
   {{- $renderedArgs = append $renderedArgs (tpl . $.root) }}
   {{- end }}
-  {{- if and $isFetchKeys .root.Values.dbKeystoreTableName }}
-  {{- $renderedArgs = append $renderedArgs "--table-name" }}
-  {{- $renderedArgs = append $renderedArgs .root.Values.dbKeystoreTableName }}
-  {{- end }}
+  {{- $renderedArgs = concat $renderedArgs $fetchKeysFlags }}
   {{- if and $isFetchKeys $useKeyVaultSecrets (not .root.Values.dbKeystoreUrl) }}
   {{- $renderedArgs = append $renderedArgs "--db-url" }}
   {{- $renderedArgs = append $renderedArgs "$DB_KEYSTORE_URL" }}
@@ -218,13 +253,13 @@ Create the name of the service account to use
   command:
     {{- (tpl (toYaml .container.command) .root) | nindent 4 }}
   {{- end }}
-  {{- if or .container.args (and $isFetchKeys .root.Values.dbKeystoreTableName) }}
+  {{- if or .container.args $fetchKeysFlags }}
   args:
     {{- if .container.args }}
     {{- (tpl (toYaml .container.args) .root) | nindent 2 }}
     {{- end }}
-    {{- if and $isFetchKeys .root.Values.dbKeystoreTableName }}
-    {{- (list "--table-name" .root.Values.dbKeystoreTableName | toYaml) | nindent 2 }}
+    {{- if $fetchKeysFlags }}
+    {{- (toYaml $fetchKeysFlags) | nindent 2 }}
     {{- end }}
   {{- end }}
   {{- end }}
