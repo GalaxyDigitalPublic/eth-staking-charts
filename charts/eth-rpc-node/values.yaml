@@ -241,6 +241,18 @@ containerSecurityContext:
   capabilities:
     drop: ["ALL"]
 
+# Seconds a client gets to shut down cleanly before SIGKILL.
+#
+# The Kubernetes default of 30s is NOT safe here: an execution client killed
+# mid-write can corrupt its database, and recovering that means a full resync --
+# hours for geth/besu/nethermind, 10+ for reth, which has no snap sync. The
+# ethpandaops chart used 300s for the same reason.
+#
+# The cost is rollout speed: with strategy Recreate the replacement pod cannot
+# start until the old one is gone, and it holds the p2p hostPort while it
+# terminates, so a pair takes up to this long to roll over.
+terminationGracePeriodSeconds: 300
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
