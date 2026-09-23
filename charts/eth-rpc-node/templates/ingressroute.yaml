@@ -1,0 +1,46 @@
+{{/*
+Traefik IngressRoutes for the pair.
+
+Owned by the chart so the route and the Service it targets cannot drift apart.
+Each pair previously carried a hand-written IngressRoute naming its Services as
+strings, which is how a CL route kept pointing at a `-beacon` Service after the
+Service was renamed.
+*/}}
+{{- $full := include "eth-rpc-node.fullname" . }}
+{{- if .Values.ingress.enabled }}
+{{- with .Values.ingress.executionHostname }}
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ printf "%s-execution" $full }}
+  labels:
+{{ include "eth-rpc-node.labels" $ | indent 4 }}
+spec:
+  entryPoints:
+    - {{ $.Values.ingress.entryPoint }}
+  routes:
+    - match: Host(`{{ . }}`)
+      kind: Rule
+      services:
+        - name: {{ printf "%s-execution" $full }}
+          port: {{ $.Values.ports.executionHttp }}
+{{- end }}
+{{- with .Values.ingress.consensusHostname }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ printf "%s-consensus" $full }}
+  labels:
+{{ include "eth-rpc-node.labels" $ | indent 4 }}
+spec:
+  entryPoints:
+    - {{ $.Values.ingress.entryPoint }}
+  routes:
+    - match: Host(`{{ . }}`)
+      kind: Rule
+      services:
+        - name: {{ printf "%s-consensus" $full }}
+          port: {{ $.Values.ports.consensusRest }}
+{{- end }}
+{{- end }}

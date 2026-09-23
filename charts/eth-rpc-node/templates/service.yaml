@@ -5,11 +5,11 @@ metadata:
   name: {{ printf "%s-execution" $full }}
   labels:
 {{ include "eth-rpc-node.labels" . | indent 4 }}
-  {{- if and .Values.externalDns.enabled .Values.externalDns.executionHostname }}
+  {{- if and .Values.externalDns.enabled .Values.ingress.executionHostname }}
   annotations:
     # Targets the node's public IP directly: the RPC is fronted by a hostPort
     # ingress on the node, not by a cloud load balancer.
-    external-dns.alpha.kubernetes.io/hostname: {{ .Values.externalDns.executionHostname | quote }}
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.ingress.executionHostname | quote }}
     external-dns.alpha.kubernetes.io/target: {{ .Values.node.ip | quote }}
   {{- end }}
 spec:
@@ -32,9 +32,9 @@ metadata:
   name: {{ printf "%s-consensus" $full }}
   labels:
 {{ include "eth-rpc-node.labels" . | indent 4 }}
-  {{- if and .Values.externalDns.enabled .Values.externalDns.consensusHostname }}
+  {{- if and .Values.externalDns.enabled .Values.ingress.consensusHostname }}
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: {{ .Values.externalDns.consensusHostname | quote }}
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.ingress.consensusHostname | quote }}
     external-dns.alpha.kubernetes.io/target: {{ .Values.node.ip | quote }}
   {{- end }}
 spec:

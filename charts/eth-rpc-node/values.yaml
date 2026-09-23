@@ -171,11 +171,30 @@ initContainers:
 # -----------------------------------------------------------------------------
 # External DNS
 # -----------------------------------------------------------------------------
-externalDns:
+# -----------------------------------------------------------------------------
+# Ingress + DNS
+# -----------------------------------------------------------------------------
+# The chart owns these outright. Previously each pair needed three extra files
+# beside its release -- an IngressRoute, plus carrier Services whose only job
+# was to hold external-dns annotations -- and nothing kept the hostnames in
+# them consistent with the release they described.
+#
+# Set a hostname and you get both the DNS record and the Traefik route, pointed
+# at the right Service, with the DNS target derived from node.ip.
+ingress:
   enabled: false
-  # Hostnames are annotated onto carrier Services targeting node.ip.
+  # Traefik entrypoint. `web` (port 80) is what is bound on these nodes; the
+  # Talos firewall restricts 80/443 to the validator NATs, which is what keeps
+  # the RPC from being world-reachable.
+  entryPoint: web
   executionHostname: ""
   consensusHostname: ""
+
+# DNS records are annotated directly onto the real Services, so no carrier
+# Service is needed. Defaults to following `ingress` -- set explicitly only if
+# you want a record without a route, or vice versa.
+externalDns:
+  enabled: true
 
 # No PodDisruptionBudget, deliberately. Each release is a single pod pinned to a
 # single node, so maxUnavailable:1 would protect nothing while minAvailable:1
