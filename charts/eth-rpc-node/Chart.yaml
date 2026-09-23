@@ -1,0 +1,25 @@
+apiVersion: v2
+name: eth-rpc-node
+version: 0.1.0
+appVersion: "0.1.0"
+kubeVersion: "^1.26.0-0"
+description: >-
+  An Ethereum execution + consensus client pair serving RPC to validator
+  infrastructure. One release per pair, per node. Client differences are held
+  as data rather than template logic, so the node's identity is stated once
+  and every client flag is derived from it.
+type: application
+keywords:
+  - ethereum
+  - execution
+  - consensus
+  - rpc
+sources:
+  - https://github.com/GalaxyDigitalPublic/eth-staking-charts
+# No chart dependencies, deliberately.
+#
+# The other charts here depend on `common` for name/label helpers, but that is
+# ~30 lines of boilerplate in exchange for a build-time dependency on
+# charts.staking.galaxy.com, a Chart.lock and a vendored charts/ dir. It also
+# stops the chart being copied into another repo as-is, which is how we expect
+# this to reach Alluvial. Helpers are inlined in templates/_helpers.tpl instead.

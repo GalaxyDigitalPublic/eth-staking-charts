@@ -1,0 +1,48 @@
+{{- $full := include "eth-rpc-node.fullname" . }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-execution" $full }}
+  labels:
+{{ include "eth-rpc-node.labels" . | indent 4 }}
+  {{- if and .Values.externalDns.enabled .Values.externalDns.executionHostname }}
+  annotations:
+    # Targets the node's public IP directly: the RPC is fronted by a hostPort
+    # ingress on the node, not by a cloud load balancer.
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.externalDns.executionHostname | quote }}
+    external-dns.alpha.kubernetes.io/target: {{ .Values.node.ip | quote }}
+  {{- end }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    eth-rpc-node/layer: execution
+  ports:
+    - name: http-rpc
+      port: {{ .Values.ports.executionHttp }}
+      targetPort: http-rpc
+    # Engine API. Cluster-internal only -- never expose this.
+    - name: auth-rpc
+      port: {{ .Values.ports.executionAuthRpc }}
+      targetPort: auth-rpc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-consensus" $full }}
+  labels:
+{{ include "eth-rpc-node.labels" . | indent 4 }}
+  {{- if and .Values.externalDns.enabled .Values.externalDns.consensusHostname }}
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.externalDns.consensusHostname | quote }}
+    external-dns.alpha.kubernetes.io/target: {{ .Values.node.ip | quote }}
+  {{- end }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    eth-rpc-node/layer: consensus
+  ports:
+    - name: rest
+      port: {{ .Values.ports.consensusRest }}
+      targetPort: rest

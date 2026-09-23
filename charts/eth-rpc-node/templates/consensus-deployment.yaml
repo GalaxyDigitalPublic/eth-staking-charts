@@ -1,0 +1,116 @@
+{{- $full := include "eth-rpc-node.fullname" . }}
+{{- $name := printf "%s-consensus" $full }}
+{{- $client := .Values.consensus.client }}
+{{- $spec := index .Values.clients.consensus $client }}
+{{- $heapBytes := include "eth-rpc-node.heapBytes" (dict "layer" .Values.consensus) | int64 }}
+{{- $ctx := dict
+      "network"       .Values.network
+      "ip"            .Values.node.ip
+      "dataDir"       $spec.dataDir
+      "jwtPath"       "/jwt/jwt.hex"
+      "restPort"      .Values.ports.consensusRest
+      "p2pPort"       .Values.p2p.consensusPort
+      "elEndpoint"    (printf "http://%s-execution:%v" $full .Values.ports.executionAuthRpc)
+      "mevUrl"        .Values.mev.url
+      "checkpointUrl" .Values.consensus.checkpointSyncUrl
+      "metricsPort" $spec.metricsPort
+      "heapBytes"     $heapBytes
+      "heap"          (printf "%dm" (div $heapBytes 1048576))
+      "heapMB"        (div $heapBytes 1048576) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+{{ include "eth-rpc-node.labels" . | indent 4 }}
+    eth-rpc-node/layer: consensus
+    eth-rpc-node/client: {{ $client }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      eth-rpc-node/layer: consensus
+  template:
+    metadata:
+      labels:
+{{ include "eth-rpc-node.labels" . | indent 8 }}
+        eth-rpc-node/layer: consensus
+        eth-rpc-node/client: {{ $client }}
+      annotations:
+        {{- if and .Values.metrics.enabled .Values.metrics.clients }}
+        # Annotation-based discovery: no Prometheus Operator on these clusters.
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ $spec.metricsPort | quote }}
+        prometheus.io/path: "/metrics"
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values: [{{ .Values.node.name | quote }}]
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ $spec.containerName }}
+          image: {{ default $spec.image .Values.consensus.image | quote }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          args:
+{{ include "eth-rpc-node.args" (dict "spec" $spec "ctx" $ctx "extras" .Values.consensus.extras "mev" .Values.mev.enabled "checkpointUrl" .Values.consensus.checkpointSyncUrl) | indent 12 }}
+          env:
+{{ include "eth-rpc-node.env" (dict "spec" $spec "ctx" $ctx "envMap" .Values.consensus.env) | indent 12 }}
+          ports:
+            - name: rest
+              containerPort: {{ .Values.ports.consensusRest }}
+            # Advertised and listening p2p ports both come from
+            # p2p.consensusPort, so they cannot diverge. lodestar previously
+            # listened on 9000 while advertising 30900.
+            - name: metrics
+              containerPort: {{ $spec.metricsPort }}
+            - name: p2p-tcp
+              containerPort: {{ .Values.p2p.consensusPort }}
+              protocol: TCP
+              {{- if .Values.p2p.hostPort }}
+              hostPort: {{ .Values.p2p.consensusPort }}
+              {{- end }}
+            - name: p2p-udp
+              containerPort: {{ .Values.p2p.consensusPort }}
+              protocol: UDP
+              {{- if .Values.p2p.hostPort }}
+              hostPort: {{ .Values.p2p.consensusPort }}
+              {{- end }}
+          resources: {{- toYaml .Values.consensus.resources | nindent 12 }}
+          volumeMounts:
+            - name: storage
+              mountPath: {{ $spec.dataDir }}
+            - name: jwt
+              mountPath: /jwt
+              readOnly: true
+      volumes:
+        - name: storage
+          {{- if .Values.consensus.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ default (printf "%s-consensus" $full) .Values.consensus.persistence.existingClaim }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: jwt
+          secret:
+            secretName: {{ printf "%s-jwt" $full }}

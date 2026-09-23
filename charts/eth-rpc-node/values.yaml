@@ -1,0 +1,414 @@
+# =============================================================================
+# eth-rpc-node
+# =============================================================================
+# An execution + consensus pair on one node, serving RPC to validator infra.
+#
+# Everything above the `clients:` table is what you set per release. Everything
+# in `clients:` is the per-client flag data the chart derives from, and you only
+# touch it to add a client or pin a new image.
+#
+# The design rule: state the node's identity ONCE. Before this chart the node IP
+# appeared five times per release (EL advertise flag, CL ENR address, CL ENR tcp,
+# CL ENR udp, external-dns annotation) and nothing stopped them disagreeing.
+# Here it is `node.ip`, and every flag is derived from it.
+# =============================================================================
+
+# Ethereum network. Selects the network flag for both clients from the table
+# below, so it can never be set on one and missed on the other.
+network: hoodi
+
+node:
+  # Kubernetes node this pair is pinned to. Drives nodeAffinity for both
+  # StatefulSets, so the EL and CL always land together.
+  name: ""
+  # The node's PUBLIC IP. Derives the EL advertise flag, the CL ENR, and the
+  # external-dns target. Talos nodes have no ExternalIP in the Kubernetes API
+  # (the public address sits on eth0 and Kubernetes only sees InternalIP),
+  # so this cannot be discovered at runtime and must be supplied.
+  ip: ""
+
+# -----------------------------------------------------------------------------
+# Execution layer
+# -----------------------------------------------------------------------------
+execution:
+  client: geth          # geth | besu | nethermind | reth
+  image: ""             # defaults to clients.execution.<client>.image
+  maxPeers: 100
+
+  # Managed-runtime heap ceiling (JVM, Go, Node -- see clients.<layer>.<client>.heap).
+  # Empty means derive it as `heapFraction` of resources.limits.memory, which is
+  # the safe default: teku OOMKilled at an 8Gi limit because it ships no -Xmx and
+  # the JVM sized its heap straight off the cgroup, leaving no room for off-heap.
+  # Deriving from the limit means the heap can never exceed the container.
+  # Set explicitly (e.g. "12g") to override. Emitted only for clients that have a
+  # managed heap: reth is Rust, and nethermind's .NET limits are not set this way.
+  heap: ""
+  heapFraction: 0.75
+
+  # Arbitrary environment variables, as a MAP keyed by name so one entry can be
+  # overridden without restating the others. For anything `heap` doesn't cover
+  # (GOGC, DOTNET_*, RUST_LOG).
+  env: {}
+
+  # Raw client flags, appended AFTER every derived flag.
+  #
+  # This is the same escape hatch as EL_EXTRAS in cmf-ansible-inventory, and it
+  # is deliberately additive: extras can never remove a derived flag. Overriding
+  # a list in Helm REPLACES it, which is how six execution clients silently lost
+  # their network flag and synced mainnet on a testnet cluster. Retention flags
+  # belong here rather than in a named profile, so they stay visible and don't
+  # need a chart release to change.
+  extras: ""
+
+  persistence:
+    enabled: true
+    size: 500Gi
+    storageClassName: local-path
+    # Bind an existing PVC instead of creating one. Needed to migrate off the
+    # ethpandaops StatefulSet without resyncing: its volumeClaimTemplate PVCs
+    # are named storage-<sts>-0, which this chart would otherwise not adopt.
+    existingClaim: ""
+  resources:
+    requests: { cpu: 2, memory: 8Gi }
+    limits: { memory: 16Gi }
+
+# -----------------------------------------------------------------------------
+# Consensus layer
+# -----------------------------------------------------------------------------
+consensus:
+  client: lighthouse    # lighthouse | teku | lodestar
+  image: ""
+  extras: ""
+
+  # Managed-runtime heap ceiling (JVM, Go, Node -- see clients.<layer>.<client>.heap).
+  # Empty means derive it as `heapFraction` of resources.limits.memory, which is
+  # the safe default: teku OOMKilled at an 8Gi limit because it ships no -Xmx and
+  # the JVM sized its heap straight off the cgroup, leaving no room for off-heap.
+  # Deriving from the limit means the heap can never exceed the container.
+  # Set explicitly (e.g. "12g") to override. Emitted only for clients that have a
+  # managed heap: reth is Rust, and nethermind's .NET limits are not set this way.
+  heap: ""
+  heapFraction: 0.75
+
+  # Arbitrary environment variables, as a MAP keyed by name so one entry can be
+  # overridden without restating the others. For anything `heap` doesn't cover
+  # (GOGC, DOTNET_*, RUST_LOG).
+  env: {}
+
+  # Checkpoint sync avoids weeks of backfill on a fresh node.
+  checkpointSyncUrl: ""
+
+  persistence:
+    enabled: true
+    size: 100Gi
+    storageClassName: local-path
+    # Bind an existing PVC instead of creating one. Needed to migrate off the
+    # ethpandaops StatefulSet without resyncing: its volumeClaimTemplate PVCs
+    # are named storage-<sts>-0, which this chart would otherwise not adopt.
+    existingClaim: ""
+  resources:
+    requests: { cpu: 1, memory: 8Gi }
+    # Lighthouse peaked at 7.63GiB during PeerDAS data-column backfill and was
+    # OOMKilled against an 8Gi ceiling. 16Gi is the floor, not a luxury.
+    limits: { memory: 16Gi }
+
+# -----------------------------------------------------------------------------
+# MEV-Boost
+# -----------------------------------------------------------------------------
+mev:
+  enabled: true
+  url: http://mev-boost.ethereum.svc.cluster.local:18550
+
+# -----------------------------------------------------------------------------
+# P2P reachability
+# -----------------------------------------------------------------------------
+# hostPort binds the p2p ports on the node so peers can dial in. Without it the
+# client only listens inside the pod netns, inbound packets reach the node and
+# are dropped, and you get outbound-only peering (observed: 0 inbound peers on
+# every client while outbound sat at 160-202).
+#
+# Chosen over the chart's usual NodePort because NodePort needs a cluster-wide
+# allocation, a distinct port per client, and changes the advertised ENR port.
+# Service ports. teku defaults its REST API to 5051 and lodestar to 9596, so
+# both are pinned to 5052 explicitly -- every consumer (Traefik, the metrics
+# exporter, the validator clients) expects one port regardless of client.
+ports:
+  executionHttp: 8545
+  executionAuthRpc: 8551
+  consensusRest: 5052
+
+p2p:
+  hostPort: true
+  # CL p2p port. Standardised at 9000 across every client deliberately -- the
+  # advertised port and the listening port are derived from this single value,
+  # so they cannot diverge (lodestar previously listened on 9000 and advertised
+  # 30900). Two pairs per node is fine: hostPort collides only if both CLs land
+  # on the same node, which nodeAffinity prevents.
+  consensusPort: 9000
+
+# -----------------------------------------------------------------------------
+# Init containers -- a MAP keyed by name, not a list
+# -----------------------------------------------------------------------------
+# A map so you can flip one field (an image, an enabled flag) without restating
+# the others. Lists have the same replace-not-merge behaviour that caused the
+# network-flag incident.
+#
+# Note there is no chown container: fsGroup already makes the volume writable by
+# the client's UID, so the usual root chown initContainer is redundant. Nothing
+# in this pod runs as root.
+initContainers:
+  snapshotRestore:
+    enabled: false
+    # Pinned by digest. Tools are installed at runtime for now; baking them into
+    # an owned image would remove the Alpine CDN from the node recovery path,
+    # tracked separately.
+    image: alpine:3.22@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8
+    # Base URL; the chart appends <network>/<client>/...
+    baseUrl: https://snapshots.ethpandaops.io
+    # Wipe the datadir before restoring. Guarded because it destroys the chain.
+    reset: false
+
+# -----------------------------------------------------------------------------
+# External DNS
+# -----------------------------------------------------------------------------
+externalDns:
+  enabled: false
+  # Hostnames are annotated onto carrier Services targeting node.ip.
+  executionHostname: ""
+  consensusHostname: ""
+
+# No PodDisruptionBudget, deliberately. Each release is a single pod pinned to a
+# single node, so maxUnavailable:1 would protect nothing while minAvailable:1
+# would block every voluntary eviction and hang a node drain forever. The
+# redundancy that matters is at fleet level -- 8 pairs, several can be down --
+# and a PDB cannot express that across independent releases.
+
+# Scraping is annotation-based. There is no Prometheus Operator on these
+# clusters (the ServiceMonitor CRD does not exist), so Alloy discovers targets
+# from prometheus.io/* pod annotations.
+#
+# `clients` scrapes each client's native metrics endpoint in addition to the
+# ethereum-metrics-exporter. The exporter only emits normalised eth_exe_*/
+# eth_con_* series; the clients' own endpoints carry everything else.
+metrics:
+  enabled: true
+  clients: true
+  exporter:
+    enabled: true
+    image: ethpandaops/ethereum-metrics-exporter:0.25.1
+    port: 9090
+
+# Applied to both pods. Non-root throughout; fsGroup grants volume access.
+podSecurityContext:
+  runAsNonRoot: true
+  # Required by the `restricted` Pod Security Standard. hostPort still warns
+  # under that profile and cannot be avoided -- p2p needs it -- but there is no
+  # reason to fail seccomp as well.
+  seccompProfile:
+    type: RuntimeDefault
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+podAnnotations: {}
+additionalLabels: {}
+nodeSelector: {}
+tolerations: []
+
+# =============================================================================
+# Client data table
+# =============================================================================
+# Every client says the same few things in different syntax. Those differences
+# live here as DATA so the templates stay free of per-client if/else -- adding a
+# client is a table entry, not a template change.
+#
+# `flags` entries are rendered with `tpl` against a context providing:
+#   .network .ip .maxPeers .elEndpoint .mevUrl .p2pPort .checkpointUrl .dataDir
+# =============================================================================
+clients:
+  execution:
+    geth:
+      image: ethereum/client-go:v1.17.5@sha256:523d3ba26623a619e912019068dc2784f02934070ac46bdae4d5b9df0d917814
+      containerName: geth
+      # Go soft memory limit. Not a hard ceiling like -Xmx, but it makes the GC
+      # work harder as the limit approaches instead of being OOMKilled.
+      heap:
+        env: GOMEMLIMIT
+        value: "{{ .heapBytes }}"
+      dataDir: /data
+      ports: { p2pTcp: 30303, p2pUdp: 30303 }
+      metricsPort: 6060
+      flags:
+        # geth is the odd one out: a bare network flag, not --network=<name>.
+        - "--{{ .network }}"
+        - "--nat=extip:{{ .ip }}"
+        - "--maxpeers={{ .maxPeers }}"
+        - "--datadir={{ .dataDir }}"
+        - "--authrpc.addr=0.0.0.0"
+        - "--authrpc.vhosts=*"
+        - "--authrpc.jwtsecret={{ .jwtPath }}"
+        - "--http"
+        - "--http.addr=0.0.0.0"
+        - "--http.vhosts=*"
+        - "--http.port={{ .httpPort }}"
+        - "--metrics"
+        - "--metrics.addr=0.0.0.0"
+        - "--metrics.port={{ .metricsPort }}"
+    besu:
+      image: hyperledger/besu:26.8.1@sha256:6f3f21ce533383fcc8db3bce02252b59d5a9e776b72b5a1c8ecd2db011600042
+      containerName: besu
+      heap:
+        env: BESU_OPTS
+        value: "-Xmx{{ .heap }}"
+      dataDir: /data
+      ports: { p2pTcp: 30303, p2pUdp: 30303 }
+      metricsPort: 9545
+      flags:
+        - "--network={{ .network }}"
+        - "--p2p-host={{ .ip }}"
+        - "--max-peers={{ .maxPeers }}"
+        - "--data-path={{ .dataDir }}"
+        - "--engine-rpc-enabled=true"
+        - "--engine-host-allowlist=*"
+        - "--engine-jwt-secret={{ .jwtPath }}"
+        - "--rpc-http-enabled=true"
+        - "--rpc-http-host=0.0.0.0"
+        - "--rpc-http-port={{ .httpPort }}"
+        - "--metrics-enabled=true"
+        - "--metrics-host=0.0.0.0"
+        - "--metrics-port={{ .metricsPort }}"
+    nethermind:
+      image: nethermind/nethermind:2.0.0@sha256:8156768beb584a1e62c3dcf0e0da7be61418dc08c89a80a4f9a3a48e5d247c12
+      containerName: nethermind
+      # No heap entry on purpose: .NET does not take a ceiling through a simple
+      # env var the way the JVM does (DOTNET_GCHeapHardLimit is hex bytes), and
+      # nethermind already respects the cgroup limit. Use `env` if you need to tune it.
+      dataDir: /data
+      ports: { p2pTcp: 30303, p2pUdp: 30303 }
+      metricsPort: 9545
+      flags:
+        - "--config={{ .network }}"
+        - "--Network.ExternalIp={{ .ip }}"
+        - "--Network.MaxActivePeers={{ .maxPeers }}"
+        - "--datadir={{ .dataDir }}"
+        - "--JsonRpc.Enabled=true"
+        - "--JsonRpc.Host=0.0.0.0"
+        - "--JsonRpc.Port={{ .httpPort }}"
+        - "--JsonRpc.JwtSecretFile={{ .jwtPath }}"
+        - "--Metrics.Enabled=true"
+        - "--Metrics.ExposePort={{ .metricsPort }}"
+    reth:
+      image: ghcr.io/paradigmxyz/reth:v2.6.0@sha256:8ce703acf113b2a20705b6e76adebed20f74ba8591bc7c9407203b2968aca70d
+      containerName: reth
+      # No heap entry: Rust has no managed heap to cap.
+      dataDir: /data
+      # reth runs discv5 on its own port, so it needs a third hostPort.
+      ports: { p2pTcp: 30303, p2pUdp: 30303, discv5Udp: 30304 }
+      metricsPort: 9001
+      flags:
+        - "--chain={{ .network }}"
+        - "--nat=extip:{{ .ip }}"
+        - "--max-peers={{ .maxPeers }}"
+        - "--datadir={{ .dataDir }}"
+        - "--enable-discv5-discovery"
+        - "--discovery.v5.port=30304"
+        - "--authrpc.addr=0.0.0.0"
+        - "--authrpc.jwtsecret={{ .jwtPath }}"
+        - "--http"
+        - "--http.addr=0.0.0.0"
+        - "--http.port={{ .httpPort }}"
+        - "--metrics=0.0.0.0:{{ .metricsPort }}"
+
+  consensus:
+    lighthouse:
+      image: sigp/lighthouse:v8.2.2@sha256:9a62bb8705455136e1cf96613460960f80dc2faa9d75b5c16a3bfcc9210dcdd1
+      containerName: lighthouse
+      dataDir: /data
+      metricsPort: 5054
+      flags:
+        - "--network={{ .network }}"
+        - "--execution-endpoint={{ .elEndpoint }}"
+        - "--execution-jwt={{ .jwtPath }}"
+        - "--enr-address={{ .ip }}"
+        - "--enr-tcp-port={{ .p2pPort }}"
+        - "--enr-udp-port={{ .p2pPort }}"
+        - "--port={{ .p2pPort }}"
+        - "--http"
+        - "--http-address=0.0.0.0"
+        - "--http-port={{ .restPort }}"
+        - "--datadir={{ .dataDir }}"
+        - "--metrics"
+        - "--metrics-address=0.0.0.0"
+        - "--metrics-port={{ .metricsPort }}"
+      builderFlags:
+        - "--builder={{ .mevUrl }}"
+      checkpointFlags:
+        - "--checkpoint-sync-url={{ .checkpointUrl }}"
+    teku:
+      image: consensys/teku:26.9.0@sha256:6bfef491dc2714b8c4ed4af2c05decb78b2058d77dad50a3fb2d3df167b5fde6
+      containerName: teku
+      # teku ships no explicit -Xmx, so without this the JVM sizes its heap from
+      # the cgroup and leaves nothing for off-heap -- that is the OOMKill we hit.
+      heap:
+        env: JAVA_OPTS
+        value: "-Xmx{{ .heap }}"
+      dataDir: /data
+      metricsPort: 8008
+      flags:
+        - "--network={{ .network }}"
+        - "--ee-endpoint={{ .elEndpoint }}"
+        - "--ee-jwt-secret-file={{ .jwtPath }}"
+        - "--p2p-advertised-ip={{ .ip }}"
+        - "--p2p-port={{ .p2pPort }}"
+        - "--p2p-advertised-port={{ .p2pPort }}"
+        - "--rest-api-enabled=true"
+        - "--rest-api-interface=0.0.0.0"
+        - "--rest-api-port={{ .restPort }}"
+        - "--data-path={{ .dataDir }}"
+        - "--metrics-enabled=true"
+        - "--metrics-interface=0.0.0.0"
+        - "--metrics-host-allowlist=*"
+        - "--metrics-port={{ .metricsPort }}"
+      builderFlags:
+        - "--builder-endpoint={{ .mevUrl }}"
+      checkpointFlags:
+        - "--checkpoint-sync-url={{ .checkpointUrl }}"
+    lodestar:
+      image: chainsafe/lodestar:v1.48.0@sha256:d717e4193699a67c1ee38568652827e4d33d243cabb51d5137938721aefd2886
+      containerName: lodestar
+      # Node wants megabytes as an integer, not "12g".
+      heap:
+        env: NODE_OPTIONS
+        value: "--max-old-space-size={{ .heapMB }}"
+      dataDir: /data
+      metricsPort: 8008
+      flags:
+        - "--network={{ .network }}"
+        - "--execution.urls={{ .elEndpoint }}"
+        - "--jwtSecret={{ .jwtPath }}"
+        - "--enr.ip={{ .ip }}"
+        - "--enr.tcp={{ .p2pPort }}"
+        - "--enr.udp={{ .p2pPort }}"
+        - "--port={{ .p2pPort }}"
+        - "--rest"
+        - "--rest.address=0.0.0.0"
+        - "--rest.port={{ .restPort }}"
+        - "--dataDir={{ .dataDir }}"
+        - "--metrics"
+        - "--metrics.address=0.0.0.0"
+        - "--metrics.port={{ .metricsPort }}"
+      # lodestar needs two flags where lighthouse needs one -- exactly the kind
+      # of difference that belongs in data, not in a template conditional.
+      builderFlags:
+        - "--builder"
+        - "--builder.urls={{ .mevUrl }}"
+      checkpointFlags:
+        - "--checkpointSyncUrl={{ .checkpointUrl }}"

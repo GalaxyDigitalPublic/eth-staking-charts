@@ -1,0 +1,49 @@
+{{/*
+ethereum-metrics-exporter -- one per pair, emitting the normalised eth_exe_*
+and eth_con_* series the Grafana alerts key on.
+
+It belongs in this chart rather than being a shared release (unlike mev-boost)
+because it is configured with THIS pair's EL and CL endpoints -- which the chart
+already derives, so the URLs stop being restated by hand.
+*/}}
+{{- if and .Values.metrics.enabled .Values.metrics.exporter.enabled }}
+{{- $full := include "eth-rpc-node.fullname" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ printf "%s-metrics-exporter" $full }}
+  labels:
+{{ include "eth-rpc-node.labels" . | indent 4 }}
+    eth-rpc-node/layer: metrics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      eth-rpc-node/layer: metrics
+  template:
+    metadata:
+      labels:
+{{ include "eth-rpc-node.labels" . | indent 8 }}
+        eth-rpc-node/layer: metrics
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.metrics.exporter.port | quote }}
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: metrics-exporter
+          image: {{ .Values.metrics.exporter.image | quote }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          args:
+            - --metrics-port={{ .Values.metrics.exporter.port }}
+            - --execution-url=http://{{ $full }}-execution:{{ .Values.ports.executionHttp }}
+            - --consensus-url=http://{{ $full }}-consensus:{{ .Values.ports.consensusRest }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.metrics.exporter.port }}
+          resources:
+            requests: { cpu: 10m, memory: 64Mi }
+            limits: { memory: 256Mi }
+{{- end }}
