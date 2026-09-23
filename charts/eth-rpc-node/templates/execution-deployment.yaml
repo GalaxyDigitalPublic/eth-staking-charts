@@ -77,7 +77,16 @@ spec:
       initContainers:
         - name: snapshot-restore
           image: {{ $snap.image | quote }}
-          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          # Root, deliberately and only here: `apk add` cannot write the apk
+          # database otherwise. The restored files are chowned back to the
+          # client's UID at the end of the script, and every other container in
+          # this pod stays non-root.
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           env:
             - name: RESET
               value: {{ $snap.reset | quote }}
@@ -85,6 +94,10 @@ spec:
               value: {{ printf "%s/%s/%s" $snap.baseUrl $.Values.network $client | quote }}
             - name: DATA_DIR
               value: {{ $spec.dataDir | quote }}
+            - name: RUN_UID
+              value: {{ .Values.podSecurityContext.runAsUser | quote }}
+            - name: RUN_GID
+              value: {{ .Values.podSecurityContext.runAsGroup | quote }}
           command:
             - sh
             - -c
@@ -111,6 +124,10 @@ spec:
                      "${SNAPSHOT_BASE}/${LATEST}/snapshot.tar.zst"
               zstd -d -T0 -c "${DATA_DIR}/snapshot.tar.zst" | tar -xf - -C "${DATA_DIR}/"
               rm -f "${DATA_DIR}/snapshot.tar.zst" "${DATA_DIR}/snapshot.tar.zst.aria2"
+              # Extracted as root, so hand the data back to the client's UID --
+              # fsGroup fixes the group but not files the archive owns as root.
+              echo "==> chown ${DATA_DIR} to ${RUN_UID}:${RUN_GID}"
+              chown -R "${RUN_UID}:${RUN_GID}" "${DATA_DIR}"
           volumeMounts:
             - name: storage
               mountPath: {{ $spec.dataDir }}
