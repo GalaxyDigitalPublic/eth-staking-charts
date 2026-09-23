@@ -57,6 +57,7 @@ spec:
       {{- end }}
       # Nothing here runs as root. fsGroup makes the volume writable by the
       # client's own UID, which is what makes a chown initContainer unnecessary.
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
       # EL and CL are pinned to the same node, so the pair always travels together.
       affinity:
