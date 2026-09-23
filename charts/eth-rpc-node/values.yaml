@@ -159,9 +159,14 @@ p2p:
 initContainers:
   snapshotRestore:
     enabled: false
-    # Pinned by digest. Tools are installed at runtime for now; baking them into
-    # an owned image would remove the Alpine CDN from the node recovery path,
-    # tracked separately.
+    # Pinned by digest.
+    #
+    # This step runs as root (see the initContainer's own securityContext),
+    # unlike everything else in the pod. `apk add` needs to write the apk
+    # database, so installing tools at runtime forces root into the pod. Baking
+    # aria2/zstd into an owned image removes both the root requirement and the
+    # Alpine CDN from the node recovery path -- tracked separately; until then
+    # this is the trade.
     image: alpine:3.22@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8
     # Base URL; the chart appends <network>/<client>/...
     baseUrl: https://snapshots.ethpandaops.io
@@ -214,7 +219,9 @@ metrics:
   clients: true
   exporter:
     enabled: true
-    image: ethpandaops/ethereum-metrics-exporter:0.25.1
+    # samcm is upstream for this exporter, NOT ethpandaops. Digest taken from
+    # the exporters already running on these clusters.
+    image: samcm/ethereum-metrics-exporter@sha256:91a2d9a015c17d0d1b83f98a87589d17496042cd379cd0f8c46da97389f571cd
     port: 9090
 
 # Applied to both pods. Non-root throughout; fsGroup grants volume access.
