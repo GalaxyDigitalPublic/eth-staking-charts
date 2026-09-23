@@ -77,6 +77,9 @@ network flag and silently synced mainnet on a testnet cluster.
 {{- define "eth-rpc-node.args" -}}
 {{- $spec := .spec -}}
 {{- $ctx := .ctx -}}
+{{- with $spec.subcommand }}
+- {{ . }}
+{{- end }}
 {{- range $spec.flags }}
 - {{ tpl . $ctx | quote }}
 {{- end }}

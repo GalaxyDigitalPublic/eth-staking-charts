@@ -11,6 +11,7 @@
       "jwtPath"   "/jwt/jwt.hex"
       "httpPort"  .Values.ports.executionHttp
       "authPort"  .Values.ports.executionAuthRpc
+      "p2pPort"   $spec.ports.p2pTcp
       "metricsPort" $spec.metricsPort
       "heapBytes" $heapBytes
       "heap"      (printf "%dm" (div $heapBytes 1048576))
@@ -87,6 +88,11 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+              # CHOWN is needed to hand the restored data back to the client's
+              # UID. Dropping ALL strips it even from root, which silently
+              # leaves the datadir root-owned and unwritable by the client.
+              # FOWNER covers chowning files the archive owns as another user.
+              add: ["CHOWN", "FOWNER"]
           env:
             - name: RESET
               value: {{ $snap.reset | quote }}
@@ -139,6 +145,16 @@ spec:
           args:
 {{ include "eth-rpc-node.args" (dict "spec" $spec "ctx" $ctx "extras" .Values.execution.extras) | indent 12 }}
           env:
+            # Some clients want their own identity; nethermind binds
+            # --Network.LocalIp and labels metrics with the pod name.
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
 {{ include "eth-rpc-node.env" (dict "spec" $spec "ctx" $ctx "envMap" .Values.execution.env) | indent 12 }}
           ports:
             - name: http-rpc

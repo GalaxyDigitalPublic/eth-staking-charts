@@ -288,6 +288,8 @@ clients:
         - "--metrics"
         - "--metrics.addr=0.0.0.0"
         - "--metrics.port={{ .metricsPort }}"
+        - "--port={{ .p2pPort }}"
+        - "--authrpc.port={{ .authPort }}"
     besu:
       image: hyperledger/besu:26.8.1@sha256:6f3f21ce533383fcc8db3bce02252b59d5a9e776b72b5a1c8ecd2db011600042
       containerName: besu
@@ -311,6 +313,12 @@ clients:
         - "--metrics-enabled=true"
         - "--metrics-host=0.0.0.0"
         - "--metrics-port={{ .metricsPort }}"
+        - "--p2p-port={{ .p2pPort }}"
+        # Without this besu auto-detects NAT and can override --p2p-host.
+        - "--nat-method=NONE"
+        - "--engine-rpc-port={{ .authPort }}"
+        # besu rejects RPC from non-listed hosts without this.
+        - "--host-allowlist=*"
     nethermind:
       image: nethermind/nethermind:2.0.0@sha256:8156768beb584a1e62c3dcf0e0da7be61418dc08c89a80a4f9a3a48e5d247c12
       containerName: nethermind
@@ -331,9 +339,20 @@ clients:
         - "--JsonRpc.JwtSecretFile={{ .jwtPath }}"
         - "--Metrics.Enabled=true"
         - "--Metrics.ExposePort={{ .metricsPort }}"
+        - "--Network.P2PPort={{ .p2pPort }}"
+        - "--Network.DiscoveryPort={{ .p2pPort }}"
+        # Engine API must bind 0.0.0.0 or the consensus client cannot reach it;
+        # nethermind defaults it to localhost, which is invisible across containers.
+        - "--JsonRpc.EngineHost=0.0.0.0"
+        - "--JsonRpc.EnginePort={{ .authPort }}"
+        - "--KeyStore.KeyStoreDirectory={{ .dataDir }}/keystore"
+        - "--Network.LocalIp=$(POD_IP)"
+        - "--Metrics.NodeName=$(POD_NAME)"
     reth:
       image: ghcr.io/paradigmxyz/reth:v2.6.0@sha256:8ce703acf113b2a20705b6e76adebed20f74ba8591bc7c9407203b2968aca70d
       containerName: reth
+      # `reth` runs its beacon/node role as a subcommand, not a flag.
+      subcommand: node
       # No heap entry: Rust has no managed heap to cap.
       dataDir: /data
       # reth runs discv5 on its own port, so it needs a third hostPort.
@@ -352,11 +371,17 @@ clients:
         - "--http.addr=0.0.0.0"
         - "--http.port={{ .httpPort }}"
         - "--metrics=0.0.0.0:{{ .metricsPort }}"
+        - "--port={{ .p2pPort }}"
+        # reth writes file logs under $HOME/.cache by default. Running non-root
+        # with no home directory that resolves to /.cache, which is not writable.
+        - "--log.file.directory={{ .dataDir }}/logs"
 
   consensus:
     lighthouse:
       image: sigp/lighthouse:v8.2.2@sha256:9a62bb8705455136e1cf96613460960f80dc2faa9d75b5c16a3bfcc9210dcdd1
       containerName: lighthouse
+      # `lighthouse` runs its beacon/node role as a subcommand, not a flag.
+      subcommand: beacon_node
       dataDir: /data
       metricsPort: 5054
       flags:
@@ -374,6 +399,11 @@ clients:
         - "--metrics"
         - "--metrics-address=0.0.0.0"
         - "--metrics-port={{ .metricsPort }}"
+        - "--listen-address=0.0.0.0"
+        - "--discovery-port={{ .p2pPort }}"
+        # Stops lighthouse rewriting the ENR we just derived from node.ip.
+        - "--disable-enr-auto-update"
+        - "--disable-upnp"
       builderFlags:
         - "--builder={{ .mevUrl }}"
       checkpointFlags:
@@ -403,6 +433,9 @@ clients:
         - "--metrics-interface=0.0.0.0"
         - "--metrics-host-allowlist=*"
         - "--metrics-port={{ .metricsPort }}"
+        - "--p2p-enabled=true"
+        - "--rest-api-host-allowlist=*"
+        - "--log-destination=CONSOLE"
       builderFlags:
         - "--builder-endpoint={{ .mevUrl }}"
       checkpointFlags:
@@ -410,6 +443,8 @@ clients:
     lodestar:
       image: chainsafe/lodestar:v1.48.0@sha256:d717e4193699a67c1ee38568652827e4d33d243cabb51d5137938721aefd2886
       containerName: lodestar
+      # `lodestar` runs its beacon/node role as a subcommand, not a flag.
+      subcommand: beacon
       # Node wants megabytes as an integer, not "12g".
       heap:
         env: NODE_OPTIONS

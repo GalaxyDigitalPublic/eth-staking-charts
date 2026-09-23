@@ -8,6 +8,7 @@
       "ip"            .Values.node.ip
       "dataDir"       $spec.dataDir
       "jwtPath"       "/jwt/jwt.hex"
+      "authPort"      .Values.ports.executionAuthRpc
       "restPort"      .Values.ports.consensusRest
       "p2pPort"       .Values.p2p.consensusPort
       "elEndpoint"    (printf "http://%s-execution:%v" $full .Values.ports.executionAuthRpc)
@@ -75,6 +76,16 @@ spec:
           args:
 {{ include "eth-rpc-node.args" (dict "spec" $spec "ctx" $ctx "extras" .Values.consensus.extras "mev" .Values.mev.enabled "checkpointUrl" .Values.consensus.checkpointSyncUrl) | indent 12 }}
           env:
+            # Some clients want their own identity; nethermind binds
+            # --Network.LocalIp and labels metrics with the pod name.
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
 {{ include "eth-rpc-node.env" (dict "spec" $spec "ctx" $ctx "envMap" .Values.consensus.env) | indent 12 }}
           ports:
             - name: rest
