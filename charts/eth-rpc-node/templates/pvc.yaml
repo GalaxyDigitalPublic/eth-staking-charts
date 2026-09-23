@@ -1,0 +1,32 @@
+{{/*
+Standalone PVCs, not volumeClaimTemplates.
+
+A StatefulSet welds the volume definition to the workload: volumeClaimTemplates
+are immutable, so resizing or replacing a disk means deleting and recreating the
+workload. These nodes get wiped and resized often enough that decoupling is
+worth more than the ordinal identity a StatefulSet would give us.
+*/}}
+{{- $full := include "eth-rpc-node.fullname" . }}
+{{- range $layer := list "execution" "consensus" }}
+{{- $cfg := index $.Values $layer }}
+{{- if and $cfg.persistence.enabled (not $cfg.persistence.existingClaim) }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ printf "%s-%s" $full $layer }}
+  labels:
+{{ include "eth-rpc-node.labels" $ | indent 4 }}
+    eth-rpc-node/layer: {{ $layer }}
+  annotations:
+    # Keep the chain data if the release is uninstalled -- resyncing is measured
+    # in hours to days, so this must never be a casualty of a helm delete.
+    helm.sh/resource-policy: keep
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: {{ $cfg.persistence.size }}
+  storageClassName: {{ $cfg.persistence.storageClassName }}
+{{- end }}
+{{- end }}

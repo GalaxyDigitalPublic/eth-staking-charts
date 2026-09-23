@@ -1,0 +1,173 @@
+{{- $full := include "eth-rpc-node.fullname" . }}
+{{- $name := printf "%s-execution" $full }}
+{{- $client := .Values.execution.client }}
+{{- $spec := index .Values.clients.execution $client }}
+{{- $heapBytes := include "eth-rpc-node.heapBytes" (dict "layer" .Values.execution) | int64 }}
+{{- $ctx := dict
+      "network"   .Values.network
+      "ip"        .Values.node.ip
+      "maxPeers"  .Values.execution.maxPeers
+      "dataDir"   $spec.dataDir
+      "jwtPath"   "/jwt/jwt.hex"
+      "httpPort"  .Values.ports.executionHttp
+      "authPort"  .Values.ports.executionAuthRpc
+      "metricsPort" $spec.metricsPort
+      "heapBytes" $heapBytes
+      "heap"      (printf "%dm" (div $heapBytes 1048576))
+      "heapMB"    (div $heapBytes 1048576) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+{{ include "eth-rpc-node.labels" . | indent 4 }}
+    eth-rpc-node/layer: execution
+    eth-rpc-node/client: {{ $client }}
+spec:
+  replicas: 1
+  # Recreate, not RollingUpdate. The volume is ReadWriteOnce on node-local
+  # storage and the pod is pinned to one node, so a rolling update would try to
+  # start the replacement before the old pod released the volume and deadlock.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      eth-rpc-node/layer: execution
+  template:
+    metadata:
+      labels:
+{{ include "eth-rpc-node.labels" . | indent 8 }}
+        eth-rpc-node/layer: execution
+        eth-rpc-node/client: {{ $client }}
+      annotations:
+        {{- if and .Values.metrics.enabled .Values.metrics.clients }}
+        # Annotation-based discovery: no Prometheus Operator on these clusters.
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ $spec.metricsPort | quote }}
+        prometheus.io/path: "/metrics"
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # Nothing here runs as root. fsGroup makes the volume writable by the
+      # client's own UID, which is what makes a chown initContainer unnecessary.
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      # EL and CL are pinned to the same node, so the pair always travels together.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values: [{{ .Values.node.name | quote }}]
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- $snap := .Values.initContainers.snapshotRestore }}
+      {{- if $snap.enabled }}
+      initContainers:
+        - name: snapshot-restore
+          image: {{ $snap.image | quote }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          env:
+            - name: RESET
+              value: {{ $snap.reset | quote }}
+            - name: SNAPSHOT_BASE
+              value: {{ printf "%s/%s/%s" $snap.baseUrl $.Values.network $client | quote }}
+            - name: DATA_DIR
+              value: {{ $spec.dataDir | quote }}
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              if [ "${RESET}" = "true" ]; then
+                echo "==> RESET=true, wiping ${DATA_DIR}"
+                rm -rf "${DATA_DIR:?}"/* "${DATA_DIR}"/.[!.]* 2>/dev/null || true
+              fi
+              if [ -n "$(ls -A "${DATA_DIR}" 2>/dev/null || true)" ]; then
+                echo "==> ${DATA_DIR} is not empty, skipping snapshot restore"
+                exit 0
+              fi
+              # ca-certificates so TLS verifies properly. The mainnet releases
+              # carried --check-certificate=false, which was a local Zscaler
+              # workaround that leaked into production; in-cluster TLS is fine.
+              apk add --no-cache aria2 zstd tar ca-certificates
+              LATEST=$(aria2c -q "${SNAPSHOT_BASE}/latest" -d /tmp -o latest && cat /tmp/latest)
+              echo "==> restoring snapshot ${LATEST}"
+              aria2c -x 16 -s 16 -k 500M --file-allocation=none --continue=true \
+                     --retry-wait=30 --max-tries=0 --summary-interval=60 \
+                     --console-log-level=notice \
+                     -d "${DATA_DIR}" -o snapshot.tar.zst \
+                     "${SNAPSHOT_BASE}/${LATEST}/snapshot.tar.zst"
+              zstd -d -T0 -c "${DATA_DIR}/snapshot.tar.zst" | tar -xf - -C "${DATA_DIR}/"
+              rm -f "${DATA_DIR}/snapshot.tar.zst" "${DATA_DIR}/snapshot.tar.zst.aria2"
+          volumeMounts:
+            - name: storage
+              mountPath: {{ $spec.dataDir }}
+      {{- end }}
+      containers:
+        - name: {{ $spec.containerName }}
+          image: {{ default $spec.image .Values.execution.image | quote }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          args:
+{{ include "eth-rpc-node.args" (dict "spec" $spec "ctx" $ctx "extras" .Values.execution.extras) | indent 12 }}
+          env:
+{{ include "eth-rpc-node.env" (dict "spec" $spec "ctx" $ctx "envMap" .Values.execution.env) | indent 12 }}
+          ports:
+            - name: http-rpc
+              containerPort: {{ .Values.ports.executionHttp }}
+            - name: auth-rpc
+              containerPort: {{ .Values.ports.executionAuthRpc }}
+            # hostPort binds the p2p ports on the node itself. Without it the
+            # client only listens inside the pod netns, inbound packets reach
+            # the node and are dropped, and peering is outbound-only.
+            - name: metrics
+              containerPort: {{ $spec.metricsPort }}
+            - name: p2p-tcp
+              containerPort: {{ $spec.ports.p2pTcp }}
+              protocol: TCP
+              {{- if $.Values.p2p.hostPort }}
+              hostPort: {{ $spec.ports.p2pTcp }}
+              {{- end }}
+            - name: p2p-udp
+              containerPort: {{ $spec.ports.p2pUdp }}
+              protocol: UDP
+              {{- if $.Values.p2p.hostPort }}
+              hostPort: {{ $spec.ports.p2pUdp }}
+              {{- end }}
+            {{- with $spec.ports.discv5Udp }}
+            - name: discv5-udp
+              containerPort: {{ . }}
+              protocol: UDP
+              {{- if $.Values.p2p.hostPort }}
+              hostPort: {{ . }}
+              {{- end }}
+            {{- end }}
+          resources: {{- toYaml .Values.execution.resources | nindent 12 }}
+          volumeMounts:
+            - name: storage
+              mountPath: {{ $spec.dataDir }}
+            - name: jwt
+              mountPath: /jwt
+              readOnly: true
+      volumes:
+        - name: storage
+          {{- if .Values.execution.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ default (printf "%s-execution" $full) .Values.execution.persistence.existingClaim }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: jwt
+          secret:
+            secretName: {{ printf "%s-jwt" $full }}
