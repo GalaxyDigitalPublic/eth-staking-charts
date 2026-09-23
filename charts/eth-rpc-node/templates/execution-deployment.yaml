@@ -92,7 +92,10 @@ spec:
               # UID. Dropping ALL strips it even from root, which silently
               # leaves the datadir root-owned and unwritable by the client.
               # FOWNER covers chowning files the archive owns as another user.
-              add: ["CHOWN", "FOWNER"]
+              # DAC_OVERRIDE too: the volume is owned by the client UID via
+              # fsGroup, and root without it still obeys permission bits, so
+              # even `rm` in the datadir fails with EACCES.
+              add: ["CHOWN", "FOWNER", "DAC_OVERRIDE"]
           env:
             - name: RESET
               value: {{ $snap.reset | quote }}
@@ -100,6 +103,8 @@ spec:
               value: {{ printf "%s/%s/%s" $snap.baseUrl $.Values.network $client | quote }}
             - name: DATA_DIR
               value: {{ $spec.dataDir | quote }}
+            - name: DATA_MARKER
+              value: {{ $spec.dataMarker | quote }}
             - name: RUN_UID
               value: {{ .Values.podSecurityContext.runAsUser | quote }}
             - name: RUN_GID
@@ -113,10 +118,16 @@ spec:
                 echo "==> RESET=true, wiping ${DATA_DIR}"
                 rm -rf "${DATA_DIR:?}"/* "${DATA_DIR}"/.[!.]* 2>/dev/null || true
               fi
-              if [ -n "$(ls -A "${DATA_DIR}" 2>/dev/null || true)" ]; then
-                echo "==> ${DATA_DIR} is not empty, skipping snapshot restore"
+              # Guard on the client's own data subdirectory, NOT on "is
+              # /data non-empty". A half-finished download leaves
+              # snapshot.tar.zst behind, and treating that as "already
+              # restored" would start the client on an empty chain.
+              if [ -d "${DATA_DIR}/${DATA_MARKER}" ] && [ -n "$(ls -A "${DATA_DIR}/${DATA_MARKER}" 2>/dev/null || true)" ]; then
+                echo "==> ${DATA_DIR}/${DATA_MARKER} already populated, skipping snapshot restore"
                 exit 0
               fi
+              # Clear any partial download from a previous attempt.
+              rm -f "${DATA_DIR}/snapshot.tar.zst" "${DATA_DIR}/snapshot.tar.zst.aria2" 2>/dev/null || true
               # ca-certificates so TLS verifies properly. The mainnet releases
               # carried --check-certificate=false, which was a local Zscaler
               # workaround that leaked into production; in-cluster TLS is fine.
@@ -142,6 +153,7 @@ spec:
         - name: {{ $spec.containerName }}
           image: {{ default $spec.image .Values.execution.image | quote }}
           securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          command: {{ toJson $spec.binary }}
           args:
 {{ include "eth-rpc-node.args" (dict "spec" $spec "ctx" $ctx "extras" .Values.execution.extras) | indent 12 }}
           env:

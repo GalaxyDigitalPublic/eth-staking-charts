@@ -73,6 +73,7 @@ spec:
         - name: {{ $spec.containerName }}
           image: {{ default $spec.image .Values.consensus.image | quote }}
           securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          command: {{ toJson $spec.binary }}
           args:
 {{ include "eth-rpc-node.args" (dict "spec" $spec "ctx" $ctx "extras" .Values.consensus.extras "mev" .Values.mev.enabled "checkpointUrl" .Values.consensus.checkpointSyncUrl) | indent 12 }}
           env:
