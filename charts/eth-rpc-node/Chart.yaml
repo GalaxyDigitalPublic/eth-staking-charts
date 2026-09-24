@@ -1,7 +1,7 @@
 apiVersion: v2
 name: eth-rpc-node
-version: 0.2.3
-appVersion: "0.2.3"
+version: 0.2.4
+appVersion: "0.2.4"
 kubeVersion: "^1.26.0-0"
 description: >-
   An Ethereum execution + consensus client pair serving RPC to validator

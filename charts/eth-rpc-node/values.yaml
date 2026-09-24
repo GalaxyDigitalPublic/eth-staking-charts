@@ -80,6 +80,19 @@ consensus:
   image: ""
   extras: ""
 
+  # Cap the peer count. Left unset the CLs grow unbounded -- observed 777 peers
+  # on a lighthouse, against ~100 for teku, which caps itself by default. More
+  # peers costs memory, and combined with PeerDAS data-column backfill it
+  # OOMKilled a lighthouse sitting at 10.6 GiB against a 16Gi limit.
+  # 100 matches lighthouse's own default. More peers does help propagation, but
+  # returns diminish sharply past ~100 while memory, CPU and bandwidth keep
+  # rising -- and with PeerDAS, peers also request data columns from us. For a
+  # node serving validator RPC, being OOMKilled costs far more than hearing a
+  # block a few ms later. Note --target-peers is a target, so the actual count
+  # settles slightly above this. Raise to 150-200 if propagation is worth the
+  # memory; revisit from observed usage rather than by guessing.
+  maxPeers: 100
+
   # Managed-runtime heap ceiling (JVM, Go, Node -- see clients.<layer>.<client>.heap).
   # Empty means derive it as `heapFraction` of resources.limits.memory, which is
   # the safe default: teku OOMKilled at an 8Gi limit because it ships no -Xmx and
@@ -448,6 +461,7 @@ clients:
         # Stops lighthouse rewriting the ENR we just derived from node.ip.
         - "--disable-enr-auto-update"
         - "--disable-upnp"
+        - "--target-peers={{ .maxPeers }}"
       builderFlags:
         - "--builder={{ .mevUrl }}"
       checkpointFlags:
@@ -484,6 +498,9 @@ clients:
         - "--p2p-enabled=true"
         - "--rest-api-host-allowlist=*"
         - "--log-destination=CONSOLE"
+        # teku also has --p2p-peer-lower-bound; only the upper bound is
+        # set so a lower default cannot end up above the cap.
+        - "--p2p-peer-upper-bound={{ .maxPeers }}"
       builderFlags:
         - "--builder-endpoint={{ .mevUrl }}"
       checkpointFlags:
@@ -518,6 +535,7 @@ clients:
         - "--metrics"
         - "--metrics.address=0.0.0.0"
         - "--metrics.port={{ .metricsPort }}"
+        - "--targetPeers={{ .maxPeers }}"
       # lodestar needs two flags where lighthouse needs one -- exactly the kind
       # of difference that belongs in data, not in a template conditional.
       builderFlags:
