@@ -84,7 +84,13 @@ consensus:
   # on a lighthouse, against ~100 for teku, which caps itself by default. More
   # peers costs memory, and combined with PeerDAS data-column backfill it
   # OOMKilled a lighthouse sitting at 10.6 GiB against a 16Gi limit.
-  # Nothing above ~100 buys useful peer diversity for an RPC node.
+  # 100 matches lighthouse's own default. More peers does help propagation, but
+  # returns diminish sharply past ~100 while memory, CPU and bandwidth keep
+  # rising -- and with PeerDAS, peers also request data columns from us. For a
+  # node serving validator RPC, being OOMKilled costs far more than hearing a
+  # block a few ms later. Note --target-peers is a target, so the actual count
+  # settles slightly above this. Raise to 150-200 if propagation is worth the
+  # memory; revisit from observed usage rather than by guessing.
   maxPeers: 100
 
   # Managed-runtime heap ceiling (JVM, Go, Node -- see clients.<layer>.<client>.heap).
