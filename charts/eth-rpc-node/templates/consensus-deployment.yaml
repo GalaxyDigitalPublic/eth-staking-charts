@@ -9,6 +9,7 @@
       "dataDir"       $spec.dataDir
       "jwtPath"       "/jwt/jwt.hex"
       "authPort"      .Values.ports.executionAuthRpc
+      "maxPeers"      .Values.consensus.maxPeers
       "restPort"      .Values.ports.consensusRest
       "p2pPort"       .Values.p2p.consensusPort
       "elEndpoint"    (printf "http://%s-execution:%v" $full .Values.ports.executionAuthRpc)
