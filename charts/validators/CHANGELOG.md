@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.0] - 2026.11
+### Added
+- Per-client `startupProbe` (Lighthouse default: `/metrics` every 2 s, up to 5 min). Readiness for Lighthouse now starts immediately and checks every 10 s instead of waiting 60 s and checking every 60 s. Pods become Ready as soon as the VC is serving. (BCE-13597)
+
 ## [2.2.0] - 2022.02
 ### Added
 - Support for multiple beaconChainRpcEndpoints

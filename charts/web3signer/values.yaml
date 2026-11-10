@@ -187,6 +187,33 @@ serviceAccount:
 
 podAnnotations: {}
 
+## Probes. web3signer only opens its HTTP port after all keys are loaded, so /upcheck is a true "ready to
+## sign" signal. startupProbe polls fast during boot (keys + JVM); liveness/readiness only start after it.
+## Previous hardcoded values (readiness initialDelay 60 s / period 30 s) kept pods NotReady ~50 s after they
+## could already sign.
+startupProbe:
+  httpGet:
+    path: /upcheck
+    port: http
+  periodSeconds: 2
+  timeoutSeconds: 2
+  failureThreshold: 300 # up to 10 min for very large key sets
+readinessProbe:
+  httpGet:
+    path: /upcheck
+    port: http
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+  successThreshold: 1
+livenessProbe:
+  httpGet:
+    path: /upcheck
+    port: http
+  periodSeconds: 30
+  timeoutSeconds: 3
+  failureThreshold: 6
+
 ## Pod labels to add
 podLabels: {}
 
