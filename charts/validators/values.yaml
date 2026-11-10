@@ -392,6 +392,17 @@ resources: {}
 ## Configure liveness and readiness probes
 ## https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
 ##
+## startupProbe (per client type) polls fast during boot; readiness/liveness only start after it succeeds.
+## Lighthouse previously waited 60 s for the first readiness check and then every 60 s.
+startupProbe:
+  lighthouse:
+    periodSeconds: 2
+    timeoutSeconds: 1
+    failureThreshold: 150
+    httpGet:
+      path: /metrics
+      port: metrics
+      scheme: HTTP
 readinessProbe:
   prysm:
     initialDelaySeconds: 60
@@ -404,9 +415,9 @@ readinessProbe:
       port: metrics
       scheme: HTTP
   lighthouse:
-    initialDelaySeconds: 60
+    initialDelaySeconds: 0
     timeoutSeconds: 1
-    periodSeconds: 60
+    periodSeconds: 10
     failureThreshold: 3
     successThreshold: 1
     httpGet:

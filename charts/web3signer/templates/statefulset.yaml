@@ -102,24 +102,18 @@ spec:
             - name: metrics
               containerPort: {{ .Values.metricsPort }}
               protocol: TCP
+          {{- with .Values.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.livenessProbe }}
           livenessProbe:
-            httpGet:
-              path: /upcheck
-              port: http
-            initialDelaySeconds: 900
-            timeoutSeconds: 3
-            periodSeconds: 30
-            failureThreshold: 3
-            successThreshold: 1
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
           readinessProbe:
-            httpGet:
-              path: /upcheck
-              port: http
-            initialDelaySeconds: 60
-            timeoutSeconds: 3
-            periodSeconds: 30
-            failureThreshold: 3
-            successThreshold: 1
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:

@@ -228,6 +228,14 @@ spec:
               name: metrics
               protocol: TCP
           {{- end }}
+          {{- with (pluck $root.Values.type ($root.Values.startupProbe | default dict) | first) }}
+
+          startupProbe:
+
+            {{- toYaml . | nindent 12 }}
+
+          {{- end }}
+
           {{- with (pluck $root.Values.type $root.Values.readinessProbe | first) }}
           readinessProbe:
             {{- toYaml . | nindent 12 }}
