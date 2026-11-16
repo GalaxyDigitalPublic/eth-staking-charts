@@ -214,6 +214,9 @@ keyManagerApi:
   # Secret that contains the API token.
   tokenSecret:
     name: "apitoken"
+    # Generate the Secret in the chart (random once, kept across upgrades with lookup) instead of providing it.
+    # Restrict who can reach the API port (NetworkPolicy / mesh authorization): the token is not the only control.
+    generate: false
     # Key containing the API auth token
     publicKey: "token"
     # Key containing the corresponding secret key - Lighthouse

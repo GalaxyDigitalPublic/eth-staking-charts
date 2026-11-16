@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.6.0] - 2026.11
+### Added
+- `keyManagerApi.tokenSecret.generate`: the chart creates the keymanager token Secret (random once, kept across upgrades with `lookup`, `helm.sh/resource-policy: keep`, excluded from Velero) instead of requiring a pre-made one; the token pre-check hook is skipped in that mode. Default off. (BCE-13767)
+
 ## [6.5.0] - 2026.11
 ### Added
 - `cliImage.extraEnv`: extra env for the `get-configs` (sync-keys) init container, e.g. `SYNC_KEYS_DB_AUTH=aws-iam` for passwordless RDS IAM auth with an IRSA role on `serviceAccount.annotations`. Default render unchanged. (BCE-13767)
