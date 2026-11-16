@@ -6,7 +6,7 @@
 {{- fail ".Values.suggestedFeeRecipient is empty" }}
 {{- end }}
 
-{{- if and .Values.keyManagerApi.enabled .Values.keyManagerApi.tokenSecret.name }}
+{{- if and .Values.keyManagerApi.enabled .Values.keyManagerApi.tokenSecret.name (not .Values.keyManagerApi.tokenSecret.generate) }}
 apiVersion: v1
 kind: Pod
 metadata:
