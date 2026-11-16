@@ -110,6 +110,9 @@ spec:
           env:
             - name: WEB3SIGNER_URL
               value: {{ $root.Values.web3signerEndpoint }}
+            {{- with $root.Values.cliImage.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           args:
             - "sync-validator-keys"
             - "--db-url"

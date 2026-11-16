@@ -42,6 +42,10 @@ cliImage:
   repository: "galaxydigitalpublic/sync-keys"
   tag: "0.4.1"
   pullPolicy: Always
+  # Extra env for the key-list init container, e.g. passwordless DB auth (sync-keys >= the release with
+  # SYNC_KEYS_DB_AUTH): [{name: SYNC_KEYS_DB_AUTH, value: aws-iam}, {name: AWS_REGION, value: us-east-1}] with an
+  # IRSA role on serviceAccount.annotations, and a dbKeystoreUrl without a password.
+  extraEnv: []
 
 ## Database connection string, ex. 'postgresql://username:pass@hostname/dbname'
 ##
