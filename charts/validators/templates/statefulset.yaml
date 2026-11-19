@@ -106,7 +106,11 @@ spec:
           image: "{{ $root.Values.cliImage.registry }}/{{ $root.Values.cliImage.repository }}:{{ $root.Values.cliImage.tag }}"
           imagePullPolicy: {{ $root.Values.cliImage.pullPolicy }}
           securityContext:
+          {{- if $root.Values.initContainersNonRoot.enabled }}
+            {{- toYaml $root.Values.initContainersNonRoot.securityContext | nindent 12 }}
+          {{- else }}
             runAsUser: 0
+          {{- end }}
           env:
             - name: WEB3SIGNER_URL
               value: {{ $root.Values.web3signerEndpoint }}
@@ -124,6 +128,10 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+            {{- if $root.Values.initContainersNonRoot.enabled }}
+            - name: get-configs-tmp
+              mountPath: /tmp
+            {{- end }}
         {{- if $root.Values.web3signerTls.enabled }}
         # Inject TLS configuration into validator_definitions.yml for Lighthouse
         - name: inject-tls-config
@@ -155,6 +163,20 @@ spec:
         - name: prepare
           image: "{{ $root.Values.initImageBusybox.registry }}/{{ $root.Values.initImageBusybox.repository }}:{{ $root.Values.initImageBusybox.tag }}"
           imagePullPolicy: {{ $root.Values.initImageBusybox.pullPolicy }}
+          {{- if $root.Values.initContainersNonRoot.enabled }}
+          securityContext:
+            {{- toYaml $root.Values.initContainersNonRoot.securityContext | nindent 12 }}
+          # Same uid as the validator, so no chown: the files below are already its own.
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              ls -lha /data
+              mkdir -p /data/lighthouse/validators
+              cp /data/validator_definitions.yml /data/lighthouse/validators/validator_definitions.yml
+              cat /data/signer_keys.yml > /data/config
+          {{- else }}
           securityContext:
             runAsUser: 0
           command:
@@ -168,6 +190,7 @@ spec:
               cat /data/config;
               cat /data/proposerConfig.json;
               chown -R {{ $root.Values.securityContext.runAsUser }}:{{ $root.Values.securityContext.runAsUser }} /data;
+          {{- end }}
           volumeMounts:
             - name: data
               mountPath: /data
@@ -280,6 +303,12 @@ spec:
       volumes:
         - name: data
           emptyDir: {}
+        {{- if $root.Values.initContainersNonRoot.enabled }}
+        - name: get-configs-tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi
+        {{- end }}
         {{- if $root.Values.web3signerTls.enabled }}
         - name: tls-certs-pem
           secret:

@@ -6,6 +6,13 @@
 {{- fail ".Values.suggestedFeeRecipient is empty" }}
 {{- end }}
 
+{{- if .Values.initContainersNonRoot.enabled }}
+{{- $init := .Values.initContainersNonRoot.securityContext | default dict }}
+{{- if ne (toString $init.runAsUser) (toString .Values.securityContext.runAsUser) }}
+{{- fail "initContainersNonRoot.securityContext.runAsUser must equal securityContext.runAsUser" }}
+{{- end }}
+{{- end }}
+
 {{- if and .Values.keyManagerApi.enabled .Values.keyManagerApi.tokenSecret.name (not .Values.keyManagerApi.tokenSecret.generate) }}
 apiVersion: v1
 kind: Pod
