@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.7.0] - 2026.11
+### Added
+- `initContainersNonRoot.enabled`: `get-configs` and `prepare` run as the validator's uid (runAsNonRoot, no privilege escalation, read-only root filesystem, all capabilities dropped, seccomp RuntimeDefault) instead of root; `prepare` no longer chowns `/data` and `get-configs` gets an in-memory `/tmp`. The render fails if its runAsUser differs from `securityContext.runAsUser`. Default off: default render unchanged. (BCE-13774)
+
 ## [6.6.0] - 2026.11
 ### Added
 - `keyManagerApi.tokenSecret.generate`: the chart creates the keymanager token Secret (random once, kept across upgrades with `lookup`, `helm.sh/resource-policy: keep`, excluded from Velero) instead of requiring a pre-made one; the token pre-check hook is skipped in that mode. Default off. (BCE-13767)

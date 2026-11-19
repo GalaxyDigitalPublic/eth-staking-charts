@@ -21,6 +21,26 @@ securityContext:
   fsGroup: 1001
   runAsUser: 1001
 
+## Non-root init containers. Off by default: `get-configs` and `prepare` run with runAsUser: 0, as before.
+## On: both run with `securityContext` below instead, `prepare` drops its `chown -R` (the files are created by
+## the same uid the validator runs as, in an emptyDir the pod fsGroup owns), and `get-configs` gets an emptyDir
+## at /tmp (its HOME) since the root filesystem is read-only. runAsUser must equal securityContext.runAsUser
+## above, or the validator could not rewrite validator_definitions.yml; the chart fails the render otherwise.
+## The web3signerTls init containers are not affected.
+##
+initContainersNonRoot:
+  enabled: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    runAsGroup: 1001
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: ["ALL"]
+    seccompProfile:
+      type: RuntimeDefault
+
 ## RBAC configuration.
 ## ref: https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 ##
